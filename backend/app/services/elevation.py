@@ -8,6 +8,15 @@ from rasterio.windows import from_bounds
 from rasterio.enums import Resampling
 
 
+def _get_rasterio_dataset(path):
+    """
+    Opens a rasterio dataset.
+
+    This function is extracted to make it easier to mock in tests.
+    """
+    return rasterio.open(path)
+
+
 def get_elevation_from_alos(lat: float, lon: float) -> float | None:
     """
     Gets elevation for a single point from ALOS DSM.
@@ -18,7 +27,7 @@ def get_elevation_from_alos(lat: float, lon: float) -> float | None:
     path = current_app.config["ALOS_DATA_PATH"]
     logger = current_app.logger
     try:
-        with rasterio.open(path) as src:
+        with _get_rasterio_dataset(path) as src:
             # Check if coordinates are within the raster bounds
             if not (
                 src.bounds.left <= lon <= src.bounds.right
@@ -63,7 +72,7 @@ def get_elevation_grid(
     logger = current_app.logger
     results = []
     try:
-        with rasterio.open(path) as src:
+        with _get_rasterio_dataset(path) as src:
             win = from_bounds(
                 min(lon_vals),
                 min(lat_vals),

@@ -3,3 +3,6 @@ flask-cors==5.0.1
 rasterio==1.4.3
 gunicorn==23.0.0
 python-dotenv==1.0.1
+pytest==8.0.0
+pytest-cov==4.1.0
+numpy==1.26.3
