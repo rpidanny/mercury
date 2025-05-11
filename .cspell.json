@@ -2,6 +2,8 @@
   "words": [
     "alos",
     "appuser",
+    "commitlint",
+    "delaunator",
     "flask",
     "gunicorn",
     "jsonify",

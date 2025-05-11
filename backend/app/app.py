@@ -2,7 +2,7 @@
 Entry point for the ALOS DSM API application.
 """
 
-from flask import Flask, request, g
+from flask import Flask, request, g, jsonify
 from time import time
 from flask_cors import CORS
 
@@ -10,6 +10,7 @@ from app.config import ALOS_DATA_PATH
 from app.utils.logger import configure_logging
 from app.routes.lookup import lookup_bp
 from app.routes.grid import grid_bp
+from app.version import VERSION
 
 
 def create_app():
@@ -36,6 +37,11 @@ def create_app():
             f"{request.method} {request.path} {response.status_code} completed in {duration:.3f}s"
         )
         return response
+
+    # Version endpoint
+    @app.route("/version")
+    def version():
+        return jsonify({"version": VERSION})
 
     # Register API blueprints
     app.register_blueprint(lookup_bp)
