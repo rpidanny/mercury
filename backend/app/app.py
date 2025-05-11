@@ -56,9 +56,9 @@ def create_app():
         logger=app.logger, dsm_path=config.alos_data_path
     )
 
-    # Store in app for access in routes
-    app.config["elevation_service"] = elevation_service
-    app.config["app_config"] = config
+    # Store directly on app instance
+    app.elevation_service = elevation_service
+    app.app_config = config
 
     # Register API blueprints with config
     app.register_blueprint(lookup_bp)

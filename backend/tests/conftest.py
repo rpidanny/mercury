@@ -58,12 +58,12 @@ def app(monkeypatch, test_config):
     app = create_app()
     app.config.update({"TESTING": True})
 
-    # Create and add the elevation service to the app config
-    if "elevation_service" not in app.config:
+    # Create and add the elevation service directly to the app
+    if not hasattr(app, "elevation_service"):
         elevation_service = ElevationService(
             logger=app.logger, dsm_path=test_config.alos_data_path
         )
-        app.config["elevation_service"] = elevation_service
+        app.elevation_service = elevation_service
 
     yield app
 

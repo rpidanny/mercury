@@ -31,7 +31,7 @@ def get_elevation_grid():
     lon_vals = linspace(min_lon, max_lon, res)
 
     # Get the shared elevation service instance
-    elevation_service = current_app.config["elevation_service"]
+    elevation_service = current_app.elevation_service
     results, width, height = elevation_service.get_elevation_grid(
         lat_vals, lon_vals, res
     )

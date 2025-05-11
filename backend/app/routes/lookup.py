@@ -20,7 +20,7 @@ def get_elevations():
         return jsonify({"error": "Missing or invalid 'locations' array"}), 400
 
     # Get the shared elevation service instance
-    elevation_service = current_app.config["elevation_service"]
+    elevation_service = current_app.elevation_service
     results = []
 
     for loc in locations:
