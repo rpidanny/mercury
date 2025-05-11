@@ -36,14 +36,20 @@ export default class ModelBuilder {
     font: Font | null
   ): BuildResult {
     const builder = new ModelBuilder();
-    return builder.buildModel(
-      data,
-      modelWidthMM,
-      altitudeMultiplier,
-      shapeType,
-      embossText,
-      font
-    );
+
+    try {
+      return builder.buildModel(
+        data,
+        modelWidthMM,
+        altitudeMultiplier,
+        shapeType,
+        embossText,
+        font
+      );
+    } catch (error) {
+      console.error("Error building model:", error);
+      throw error;
+    }
   }
 
   private scaledPoints: ScaledPoint[] = [];
@@ -120,8 +126,15 @@ export default class ModelBuilder {
 
     // Calculate z-range for the terrain
     const zValues = this.scaledPoints.map((p) => p.z);
-    this.terrainMinZ = Math.min(...zValues);
-    this.terrainMaxZ = Math.max(...zValues);
+    // Use a loop instead of spread operator to avoid stack overflow with large arrays
+    this.terrainMinZ = zValues.length > 0 ? zValues[0] : 0;
+    this.terrainMaxZ = zValues.length > 0 ? zValues[0] : 0;
+
+    for (let i = 1; i < zValues.length; i++) {
+      if (zValues[i] < this.terrainMinZ) this.terrainMinZ = zValues[i];
+      if (zValues[i] > this.terrainMaxZ) this.terrainMaxZ = zValues[i];
+    }
+
     this.baseZ = this.terrainMinZ - Config.BASE_THICKNESS_MM;
   }
 
@@ -345,14 +358,20 @@ export default class ModelBuilder {
       return geo;
     }
 
+    // Create index mapping for fast lookup
+    const indexMap = new Map<number, ScaledPoint>();
+    this.scaledPoints.forEach((point) => {
+      indexMap.set(point.originalIndex, point);
+    });
+
     const wallVerts: number[] = [];
     const wallIdx: number[] = [];
 
     // Build wall triangles by connecting each pair of boundary points
     boundaryIdx.forEach((orig, i) => {
       const next = boundaryIdx[(i + 1) % boundaryIdx.length];
-      const p1 = this.scaledPoints.find((pt) => pt.originalIndex === orig);
-      const p2 = this.scaledPoints.find((pt) => pt.originalIndex === next);
+      const p1 = indexMap.get(orig);
+      const p2 = indexMap.get(next);
 
       if (!p1 || !p2) return;
 
