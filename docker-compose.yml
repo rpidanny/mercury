@@ -12,18 +12,19 @@ services:
       - FLASK_ENV=development
       - ALOS_DSM_PATH=/data/geo_AW3D30.vrt
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile.dev # We will create this Dockerfile next
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - ./frontend/src:/app/src
-  #     - ./frontend/public:/app/public
-  #   stdin_open: true # For react-scripts
-  #   tty: true # For react-scripts
-  #   depends_on:
-  #     - backend
-  #   environment:
-  #     - CHOKIDAR_USEPOLLING=true # For hot reloading in Docker 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev # We will create this Dockerfile next
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+    stdin_open: true # For react-scripts
+    tty: true # For react-scripts
+    depends_on:
+      - backend
+    environment:
+      - CHOKIDAR_USEPOLLING=true # For hot reloading in Docker 

@@ -1,13 +1,75 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import "tailwindcss";
+
+/* custom spinner */
+#loading-indicator {
+  display: inline-block;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border-left-color: #2563eb;
+  animation: spin 1s ease infinite;
+  margin-left: 10px;
+  vertical-align: middle;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* full-screen model-mode and form panel styles */
+#scene-container {
+  display: none;
+}
+
+body.model-mode #scene-container {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  background-color: white;
+  pointer-events: auto;
+}
+
+body.model-mode #form-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 18rem;
+  max-height: calc(100vh - 2rem);
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  border-radius: 0.5rem;
+  margin: 0;
+  padding: 1.5rem;
+  z-index: 10;
+}
+
+body.model-mode #form-container h1 {
+  display: none;
+}
+
+body.model-mode {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+#form-container {
+  transition: all 0.3s ease;
+}
+
+body.model-mode #scene-container canvas {
+  pointer-events: all;
+  touch-action: none;
 }

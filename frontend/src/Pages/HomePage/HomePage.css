@@ -1,0 +1,26 @@
+/* HomePage-specific styles */
+#form-container {
+  transition: all 0.3s ease;
+}
+
+/* When in model-view mode, pin the form panel on top-right */
+body.model-mode #form-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 18rem;
+  max-height: calc(100vh - 2rem);
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  border-radius: 0.5rem;
+  margin: 0;
+  padding: 1.5rem;
+  z-index: 10;
+}
+
+/* Hide title in model-view mode */
+body.model-mode #form-container h1 {
+  display: none;
+}

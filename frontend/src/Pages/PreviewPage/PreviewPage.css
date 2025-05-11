@@ -1,0 +1,23 @@
+/* PreviewPage-specific styles */
+#scene-container {
+  display: none;
+}
+
+/* In model-mode, show full-screen canvas container */
+body.model-mode #scene-container {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  background-color: white;
+  pointer-events: auto;
+}
+
+/* Enable interactions on canvas */
+body.model-mode #scene-container canvas {
+  pointer-events: all;
+  touch-action: none;
+}
