@@ -13,7 +13,7 @@ The backend service for the Mercury application, providing elevation data APIs.
 2. Set environment variables:
 
    ```bash
-   export ALOS_DSM_PATH=/path/to/your/elevation/data.tif
+   export ALOS_DSM_PATH=/path/to/your/elevation/data.vrt
    ```
 
 3. Run the development server:
