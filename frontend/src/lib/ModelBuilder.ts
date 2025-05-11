@@ -49,7 +49,8 @@ export default class ModelBuilder {
     const trackPoints3D = this.createTrackPoints(
       data,
       scale,
-      altitudeMultiplier
+      altitudeMultiplier,
+      scaledPoints
     );
     const delaunay = this.createDelaunay(scaledPoints);
 
@@ -116,17 +117,119 @@ export default class ModelBuilder {
   private static createTrackPoints(
     data: TerrainData,
     scale: number,
-    altitudeMultiplier: number
+    altitudeMultiplier: number,
+    scaledGridPoints: ScaledPoint[]
   ): THREE.Vector3[] {
+    // Create delaunay triangulation for grid points for interpolation
+    const gridDelaunay = Delaunator.from(
+      scaledGridPoints.map((pt) => [pt.x, pt.y])
+    );
+
     return data.trackPoints.map((p: TerrainTrackPoint) => {
       const { x, y } = data.geoToXY(p.lat, p.lon);
+      const scaledX = x * scale;
+      const scaledY = y * scale;
+
+      // Find the closest point on the terrain to ensure alignment
+      const closestTriangle = this.findContainingTriangle(
+        scaledX,
+        scaledY,
+        scaledGridPoints,
+        gridDelaunay
+      );
+
+      // Calculate z value using barycentric interpolation or use point's elevation if not found
+      let scaledZ = (p.elevation ?? 0) * altitudeMultiplier * scale;
+      if (closestTriangle) {
+        // Use barycentric interpolation for more accurate z value
+        scaledZ = this.interpolateElevation(
+          scaledX,
+          scaledY,
+          closestTriangle,
+          scaledGridPoints
+        );
+      }
+
+      // Add a small offset to ensure the path is visible above the terrain
       return new THREE.Vector3(
-        x * scale,
-        y * scale,
-        (p.elevation ?? 0) * altitudeMultiplier * scale +
-          Config.PATH_ELEVATION_MM
+        scaledX,
+        scaledY,
+        scaledZ + Config.PATH_ELEVATION_MM
       );
     });
+  }
+
+  /**
+   * Find the triangle that contains the given point using Delaunay triangulation
+   */
+  private static findContainingTriangle(
+    x: number,
+    y: number,
+    points: ScaledPoint[],
+    delaunay: Delaunator<Float64Array>
+  ): [number, number, number] | null {
+    // Implementation of point-in-triangle test
+    // For each triangle in the delaunay triangulation
+    for (let i = 0; i < delaunay.triangles.length; i += 3) {
+      const a = delaunay.triangles[i];
+      const b = delaunay.triangles[i + 1];
+      const c = delaunay.triangles[i + 2];
+
+      // Check if point (x,y) is inside this triangle
+      const ax = points[a].x;
+      const ay = points[a].y;
+      const bx = points[b].x;
+      const by = points[b].y;
+      const cx = points[c].x;
+      const cy = points[c].y;
+
+      // Using barycentric coordinates to check if point is in triangle
+      const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+      if (Math.abs(d) < 1e-10) continue; // Skip degenerate triangles
+
+      const wa = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d;
+      const wb = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d;
+      const wc = 1 - wa - wb;
+
+      if (wa >= 0 && wb >= 0 && wc >= 0) {
+        return [a, b, c]; // Found the containing triangle
+      }
+    }
+
+    return null; // Point is not in any triangle
+  }
+
+  /**
+   * Interpolate the elevation at point (x,y) using barycentric coordinates
+   */
+  private static interpolateElevation(
+    x: number,
+    y: number,
+    triangle: [number, number, number],
+    points: ScaledPoint[]
+  ): number {
+    const [a, b, c] = triangle;
+
+    const ax = points[a].x;
+    const ay = points[a].y;
+    const az = points[a].z;
+
+    const bx = points[b].x;
+    const by = points[b].y;
+    const bz = points[b].z;
+
+    const cx = points[c].x;
+    const cy = points[c].y;
+    const cz = points[c].z;
+
+    // Calculate barycentric coordinates
+    const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+    const wa = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d;
+    const wb = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d;
+    const wc = 1 - wa - wb;
+
+    // Interpolate z value
+    return wa * az + wb * bz + wc * cz;
   }
 
   /**
