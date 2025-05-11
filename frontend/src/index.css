@@ -23,9 +23,14 @@
   }
 }
 
-/* full-screen model-mode and form panel styles */
+/* 3D model view styles */
 #scene-container {
   display: none;
+}
+
+body.model-mode {
+  padding: 0 !important;
+  overflow: hidden;
 }
 
 body.model-mode #scene-container {
@@ -54,19 +59,11 @@ body.model-mode #form-container {
   margin: 0;
   padding: 1.5rem;
   z-index: 10;
+  transition: all 0.3s ease;
 }
 
 body.model-mode #form-container h1 {
   display: none;
-}
-
-body.model-mode {
-  padding: 0 !important;
-  overflow: hidden;
-}
-
-#form-container {
-  transition: all 0.3s ease;
 }
 
 body.model-mode #scene-container canvas {

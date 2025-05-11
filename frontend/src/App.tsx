@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import GPXParser from './lib/GPXParser';
 import TerrainGenerator from './lib/TerrainGenerator';
 import type { TerrainData } from './lib/TerrainGenerator';
@@ -14,46 +14,114 @@ import HomePage from './Pages/HomePage/HomePage';
 import PreviewPage from './Pages/PreviewPage/PreviewPage';
 import LoadingModal from './components/LoadingModal';
 
+// Define app state and action types
+type AppState = {
+  file: File | null;
+  shape: ShapeType;
+  widthMM: number;
+  altMult: number;
+  gridRes: number;
+  paddingFac: number;
+  embossText: string;
+  status: string;
+  loading: boolean;
+  font: Font | null;
+  mesh: Object3D | null;
+  terrainData: TerrainData | null;
+};
+
+type AppAction = 
+  | { type: 'SET_FILE', payload: File | null }
+  | { type: 'SET_SHAPE', payload: ShapeType }
+  | { type: 'SET_WIDTH_MM', payload: number }
+  | { type: 'SET_ALT_MULT', payload: number }
+  | { type: 'SET_GRID_RES', payload: number }
+  | { type: 'SET_PADDING_FAC', payload: number }
+  | { type: 'SET_EMBOSS_TEXT', payload: string }
+  | { type: 'SET_STATUS', payload: string }
+  | { type: 'SET_LOADING', payload: boolean }
+  | { type: 'SET_FONT', payload: Font | null }
+  | { type: 'SET_MESH', payload: Object3D | null }
+  | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null };
+
+// Initial state
+const initialState: AppState = {
+  file: null,
+  shape: 'hexagon',
+  widthMM: 100,
+  altMult: 1,
+  gridRes: 500,
+  paddingFac: 4.0,
+  embossText: '',
+  status: '',
+  loading: false,
+  font: null,
+  mesh: null,
+  terrainData: null
+};
+
+// Reducer function
+function appReducer(state: AppState, action: AppAction): AppState {
+  switch (action.type) {
+    case 'SET_FILE': return { ...state, file: action.payload };
+    case 'SET_SHAPE': return { ...state, shape: action.payload };
+    case 'SET_WIDTH_MM': return { ...state, widthMM: action.payload };
+    case 'SET_ALT_MULT': return { ...state, altMult: action.payload };
+    case 'SET_GRID_RES': return { ...state, gridRes: action.payload };
+    case 'SET_PADDING_FAC': return { ...state, paddingFac: action.payload };
+    case 'SET_EMBOSS_TEXT': return { ...state, embossText: action.payload };
+    case 'SET_STATUS': return { ...state, status: action.payload };
+    case 'SET_LOADING': return { ...state, loading: action.payload };
+    case 'SET_FONT': return { ...state, font: action.payload };
+    case 'SET_MESH': return { ...state, mesh: action.payload };
+    case 'SET_TERRAIN_DATA': return { ...state, terrainData: action.payload };
+    default: return state;
+  }
+}
+
 function App() {
-  const [file, setFile] = useState<File | null>(null);
-  const [shape, setShape] = useState<ShapeType>('hexagon');
-  const [widthMM, setWidthMM] = useState<number>(100);
-  const [altMult, setAltMult] = useState<number>(1);
-  const [gridRes, setGridRes] = useState<number>(500);
-  const [paddingFac, setPaddingFac] = useState<number>(4.0);
-  const [embossText, setEmbossText] = useState<string>('');
-  const [status, setStatus] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [font, setFont] = useState<Font | null>(null);
-  const [mesh, setMesh] = useState<Object3D | null>(null);
-  const [terrainData, setTerrainData] = useState<TerrainData | null>(null);
+  const [state, dispatch] = useReducer(appReducer, initialState);
+  const { 
+    file, shape, widthMM, altMult, gridRes, paddingFac, 
+    embossText, status, loading, font, mesh, terrainData 
+  } = state;
 
   // Load font on mount
   useEffect(() => {
     const loader = new FontLoader();
     loader.load(
       Config.FONT_URL,
-      (f: Font) => setFont(f),
+      (f: Font) => dispatch({ type: 'SET_FONT', payload: f }),
       undefined,
-      () => setStatus('Error loading font, emboss disabled')
+      () => dispatch({ type: 'SET_STATUS', payload: 'Error loading font, emboss disabled' })
     );
   }, []);
 
   const handleGenerate = async () => {
-    if (!file) { setStatus('Select a GPX file'); return; }
-    if (!font && embossText) { setStatus('Font loading, please wait'); return; }
-    setLoading(true);
+    if (!file) { 
+      dispatch({ type: 'SET_STATUS', payload: 'Select a GPX file' });
+      return; 
+    }
+    if (!font && embossText) { 
+      dispatch({ type: 'SET_STATUS', payload: 'Font loading, please wait' });
+      return; 
+    }
+    
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
     try {
       let data = terrainData;
       if (!data) {
-        setStatus('Parsing GPX...');
+        dispatch({ type: 'SET_STATUS', payload: 'Parsing GPX...' });
         const text = await file.text();
         const pts = GPXParser.parse(text, 10);
-        setStatus('Generating terrain...');
+        
+        dispatch({ type: 'SET_STATUS', payload: 'Generating terrain...' });
         data = await TerrainGenerator.generate(pts, gridRes, paddingFac);
-        setTerrainData(data);
+        dispatch({ type: 'SET_TERRAIN_DATA', payload: data });
       }
-      setStatus('Building 3D model...');
+      
+      dispatch({ type: 'SET_STATUS', payload: 'Building 3D model...' });
       const result = ModelBuilder.build(
         data!,
         widthMM,
@@ -62,28 +130,33 @@ function App() {
         embossText,
         font
       );
-      setMesh(result.mesh);
-      setStatus('');
+      
+      dispatch({ type: 'SET_MESH', payload: result.mesh });
+      dispatch({ type: 'SET_STATUS', payload: '' });
     } catch (err: unknown) {
-      setStatus(err instanceof Error ? err.message : String(err));
+      dispatch({ 
+        type: 'SET_STATUS', 
+        payload: err instanceof Error ? err.message : String(err) 
+      });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
-  // Update model using existing terrain data without refetching
   const handleUpdateModel = async () => {
     if (!terrainData) {
-      setStatus('No terrain data available, please regenerate');
+      dispatch({ type: 'SET_STATUS', payload: 'No terrain data available, please regenerate' });
       return;
     }
     if (!font && embossText) {
-      setStatus('Font loading, please wait');
+      dispatch({ type: 'SET_STATUS', payload: 'Font loading, please wait' });
       return;
     }
-    setLoading(true);
+    
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
     try {
-      setStatus('Building 3D model...');
+      dispatch({ type: 'SET_STATUS', payload: 'Building 3D model...' });
       const result = ModelBuilder.build(
         terrainData,
         widthMM,
@@ -92,12 +165,15 @@ function App() {
         embossText,
         font
       );
-      setMesh(result.mesh);
-      setStatus('');
+      dispatch({ type: 'SET_MESH', payload: result.mesh });
+      dispatch({ type: 'SET_STATUS', payload: '' });
     } catch (err: unknown) {
-      setStatus(err instanceof Error ? err.message : String(err));
+      dispatch({ 
+        type: 'SET_STATUS', 
+        payload: err instanceof Error ? err.message : String(err) 
+      });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
@@ -114,7 +190,6 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Switch between form page and 3D preview page
   return (
     <>
       <LoadingModal message={status || (loading ? 'Loading...' : null)} />
@@ -123,29 +198,29 @@ function App() {
           mesh={mesh}
           onDownload={handleDownload}
           shape={shape}
-          onShapeChange={setShape}
+          onShapeChange={(shape) => dispatch({ type: 'SET_SHAPE', payload: shape })}
           widthMM={widthMM}
-          onWidthChange={setWidthMM}
+          onWidthChange={(v) => dispatch({ type: 'SET_WIDTH_MM', payload: v })}
           altMult={altMult}
-          onAltMultChange={setAltMult}
+          onAltMultChange={(v) => dispatch({ type: 'SET_ALT_MULT', payload: v })}
           onRegenerate={handleUpdateModel}
           loading={loading}
         />
       ) : (
         <HomePage
-          onFileChange={setFile}
+          onFileChange={(file) => dispatch({ type: 'SET_FILE', payload: file })}
           shape={shape}
-          onShapeChange={setShape}
+          onShapeChange={(shape) => dispatch({ type: 'SET_SHAPE', payload: shape })}
           widthMM={widthMM}
-          onWidthChange={setWidthMM}
+          onWidthChange={(v) => dispatch({ type: 'SET_WIDTH_MM', payload: v })}
           altMult={altMult}
-          onAltMultChange={setAltMult}
+          onAltMultChange={(v) => dispatch({ type: 'SET_ALT_MULT', payload: v })}
           gridRes={gridRes}
-          onGridResChange={setGridRes}
+          onGridResChange={(v) => dispatch({ type: 'SET_GRID_RES', payload: v })}
           paddingFac={paddingFac}
-          onPaddingFacChange={setPaddingFac}
+          onPaddingFacChange={(v) => dispatch({ type: 'SET_PADDING_FAC', payload: v })}
           embossText={embossText}
-          onEmbossTextChange={setEmbossText}
+          onEmbossTextChange={(text) => dispatch({ type: 'SET_EMBOSS_TEXT', payload: text })}
           loading={loading}
           onGenerate={handleGenerate}
         />
