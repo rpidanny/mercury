@@ -3,6 +3,7 @@
     "alos",
     "appuser",
     "commitlint",
+    "conventionalcommits",
     "delaunator",
     "flask",
     "gunicorn",
