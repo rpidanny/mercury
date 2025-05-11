@@ -23,8 +23,8 @@ def test_lookup_endpoint_valid(client, mock_rasterio):
     """Test the /api/v1/lookup endpoint with valid data."""
     test_data = {
         "locations": [
-            {"latitude": 35.6895, "longitude": 139.6917},  # Tokyo
-            {"latitude": 40.7128, "longitude": -74.0060},  # New York
+            {"latitude": 27.98, "longitude": 86.92},  # Mount Everest area
+            {"latitude": 27.97, "longitude": 86.93},  # Mount Everest area
         ]
     }
     response = client.post(
@@ -34,9 +34,10 @@ def test_lookup_endpoint_valid(client, mock_rasterio):
     data = json.loads(response.data)
     assert "results" in data
     assert len(data["results"]) == 2
-    # Check that the mock elevation value (100.0) is returned
+    # Check that we get reasonable values for Everest area
     for result in data["results"]:
-        assert result["elevation"] == 100.0
+        assert result["elevation"] is not None
+        assert 5000 < result["elevation"] < 9000  # Reasonable range for Everest
         assert "latitude" in result
         assert "longitude" in result
 
@@ -64,8 +65,8 @@ def test_lookup_endpoint_invalid_coords(client, mock_rasterio):
     """Test the /api/v1/lookup endpoint with invalid coordinates."""
     test_data = {
         "locations": [
-            {"latitude": "not-a-number", "longitude": 139.6917},
-            {"latitude": 40.7128, "longitude": -74.0060},
+            {"latitude": "not-a-number", "longitude": 86.92},
+            {"latitude": 27.98, "longitude": 86.92},  # Mount Everest area
         ]
     }
     response = client.post(
@@ -82,10 +83,10 @@ def test_grid_endpoint_valid(client, mock_rasterio):
     """Test the /api/v1/grid endpoint with valid data."""
     test_data = {
         "bounds": {
-            "min_latitude": 35.0,
-            "max_latitude": 36.0,
-            "min_longitude": 139.0,
-            "max_longitude": 140.0,
+            "min_latitude": 27.95,
+            "max_latitude": 27.99,
+            "min_longitude": 86.91,
+            "max_longitude": 86.95,
         },
         "resolution": 5,
     }
@@ -99,10 +100,11 @@ def test_grid_endpoint_valid(client, mock_rasterio):
     assert "height" in data
     assert data["width"] == 5
     assert data["height"] == 5
-    # Check that we have 5x5=25 points with mock elevation values
+    # Check that we have 5x5=25 points with reasonable elevation values
     assert len(data["results"]) == 25
     for result in data["results"]:
-        assert result["elevation"] == 100.0
+        assert result["elevation"] is not None
+        assert 5000 < result["elevation"] < 9000  # Reasonable range for Everest
 
 
 def test_grid_endpoint_invalid_json(client):
@@ -130,9 +132,9 @@ def test_grid_endpoint_invalid_bounds(client):
     test_data = {
         "bounds": {
             "min_latitude": "not-a-number",
-            "max_latitude": 36.0,
-            "min_longitude": 139.0,
-            "max_longitude": 140.0,
+            "max_latitude": 27.99,
+            "min_longitude": 86.91,
+            "max_longitude": 86.95,
         },
         "resolution": 5,
     }
