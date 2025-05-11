@@ -1,0 +1,14 @@
+<VRTDataset rasterXSize="132" rasterYSize="82">
+  <SRS dataAxisToSRSAxisMapping="2,1">GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]</SRS>
+  <GeoTransform>  8.6900277777815404e+01,  2.7777777777781730e-04,  0.0000000000000000e+00,  2.7997222222214255e+01,  0.0000000000000000e+00, -2.7777777777781730e-04</GeoTransform>
+  <VRTRasterBand dataType="Int16" band="1">
+    <ColorInterp>Gray</ColorInterp>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="1">everest_AW3D30.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="132" RasterYSize="82" DataType="Int16" BlockXSize="256" BlockYSize="256" />
+      <SrcRect xOff="0" yOff="0" xSize="132" ySize="82" />
+      <DstRect xOff="0" yOff="0" xSize="132" ySize="82" />
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>

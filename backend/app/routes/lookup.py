@@ -2,8 +2,7 @@
 Blueprint for elevation lookup endpoints.
 """
 
-from flask import Blueprint, request, jsonify
-from app.services.elevation import get_elevation_from_alos
+from flask import Blueprint, request, jsonify, current_app
 
 lookup_bp = Blueprint("lookup", __name__, url_prefix="/api/v1")
 
@@ -19,7 +18,11 @@ def get_elevations():
     locations = data.get("locations")
     if not isinstance(locations, list):
         return jsonify({"error": "Missing or invalid 'locations' array"}), 400
+
+    # Get the shared elevation service instance
+    elevation_service = current_app.elevation_service
     results = []
+
     for loc in locations:
         lat = loc.get("latitude")
         lon = loc.get("longitude")
@@ -30,6 +33,6 @@ def get_elevations():
                 raise ValueError("Coordinates out of valid range")
         except (TypeError, ValueError):
             continue
-        elevation = get_elevation_from_alos(lat, lon)
+        elevation = elevation_service.get_point_elevation(lat, lon)
         results.append({"latitude": lat, "longitude": lon, "elevation": elevation})
     return jsonify({"results": results})

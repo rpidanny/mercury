@@ -2,15 +2,25 @@
 Entry point for the ALOS DSM API application.
 """
 
-from flask import Flask, request, g, jsonify
+import sys
+from flask import Flask, request, g, jsonify, abort
 from time import time
 from flask_cors import CORS
 
-from app.config import ALOS_DATA_PATH
+try:
+    from app.config import Config
+
+    # Create a config instance for this application
+    config = Config()
+except ValueError as e:
+    print(f"Configuration error: {e}", file=sys.stderr)
+    sys.exit(1)
+
 from app.utils.logger import configure_logging
 from app.routes.lookup import lookup_bp
 from app.routes.grid import grid_bp
 from app.version import VERSION
+from app.services.elevation import ElevationService
 
 
 def create_app():
@@ -18,12 +28,10 @@ def create_app():
     Create and configure the Flask application.
     """
     app = Flask(__name__)
-    # Load configuration
-    app.config["ALOS_DATA_PATH"] = ALOS_DATA_PATH
     # Enable CORS
     CORS(app)
     # Configure logging
-    configure_logging(app)
+    configure_logging(app, log_level=config.log_level)
 
     # Request timing: record start time and log duration on each request
     @app.before_request
@@ -43,9 +51,19 @@ def create_app():
     def version():
         return jsonify({"version": VERSION})
 
-    # Register API blueprints
+    # Create single ElevationService instance
+    elevation_service = ElevationService(
+        logger=app.logger, dsm_path=config.alos_data_path
+    )
+
+    # Store directly on app instance
+    app.elevation_service = elevation_service
+    app.app_config = config
+
+    # Register API blueprints with config
     app.register_blueprint(lookup_bp)
     app.register_blueprint(grid_bp)
+
     return app
 
 
@@ -54,4 +72,4 @@ app = create_app()
 
 if __name__ == "__main__":
     # Allow running with `python app/app.py`
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host=config.host, port=config.port, debug=config.debug)

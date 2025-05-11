@@ -2,8 +2,7 @@
 Blueprint for elevation grid endpoints.
 """
 
-from flask import Blueprint, request, jsonify
-from app.services.elevation import get_elevation_grid as service_get_elevation_grid
+from flask import Blueprint, request, jsonify, current_app
 from app.utils.geometry import linspace
 
 grid_bp = Blueprint("grid", __name__, url_prefix="/api/v1")
@@ -27,7 +26,14 @@ def get_elevation_grid():
         res = max(1, res)
     except (TypeError, ValueError, KeyError):
         return jsonify({"error": "Invalid bounds or resolution"}), 400
+
     lat_vals = linspace(min_lat, max_lat, res)
     lon_vals = linspace(min_lon, max_lon, res)
-    results, width, height = service_get_elevation_grid(lat_vals, lon_vals, res)
+
+    # Get the shared elevation service instance
+    elevation_service = current_app.elevation_service
+    results, width, height = elevation_service.get_elevation_grid(
+        lat_vals, lon_vals, res
+    )
+
     return jsonify({"results": results, "width": width, "height": height})
