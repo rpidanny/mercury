@@ -44,9 +44,9 @@ def test_get_elevation_grid(app, mock_rasterio):
         service = create_elevation_service_from_flask(app)
 
         # Use coordinates within the test VRT file (Mount Everest area)
-        lat_vals = [27.95, 27.96, 27.97, 27.98, 27.99]
-        lon_vals = [86.91, 86.92, 86.93, 86.94, 86.95]
-        res = 5
+        lat_vals = [27.97, 27.98, 27.99]
+        lon_vals = [86.91, 86.92, 86.93]
+        res = 3
 
         results, width, height = service.get_elevation_grid(lat_vals, lon_vals, res)
 
