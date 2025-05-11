@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import Renderer from '../../lib/Renderer';
 import { ShapeType } from '../../lib/types';
-import FormControls from '../../components/FormControls';
+import { CompactFormControls } from '../../components/FormControls';
 import type { Object3D } from 'three';
 import './PreviewPage.css';
 
@@ -47,14 +47,13 @@ export default function PreviewPage({
     <>
       <div id="scene-container" ref={containerRef} />
       <div className="absolute bottom-4 left-4 z-10 flex flex-col space-y-2 bg-white bg-opacity-80 p-3 rounded-lg shadow-lg">
-        <FormControls
+        <CompactFormControls
           shape={shape}
           onShapeChange={onShapeChange}
           widthMM={widthMM}
           onWidthChange={onWidthChange}
           altMult={altMult}
           onAltMultChange={onAltMultChange}
-          compact={true}
         />
         
         <div className="flex space-x-2">

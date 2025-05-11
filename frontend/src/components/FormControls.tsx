@@ -8,58 +8,63 @@ interface FormControlsProps {
   onWidthChange: (v: number) => void;
   altMult: number;
   onAltMultChange: (v: number) => void;
-  compact?: boolean;
 }
 
-export default function FormControls({
+export function CompactFormControls({
   shape,
   onShapeChange,
   widthMM,
   onWidthChange,
   altMult,
   onAltMultChange,
-  compact = false
 }: FormControlsProps) {
-  if (compact) {
-    return (
-      <>
-        <div className="flex items-center space-x-2">
-          <label className="font-medium text-sm text-gray-700">Shape:</label>
-          <select
-            value={shape}
-            onChange={e => onShapeChange(e.target.value as ShapeType)}
-            className="border-gray-300 rounded p-1 bg-white text-sm"
-          >
-            <option value="hexagon">Hexagon</option>
-            <option value="square">Square</option>
-            <option value="circle">Circle</option>
-          </select>
-        </div>
-        <div className="flex items-center space-x-2">
-          <label className="font-medium text-sm text-gray-700">Width (mm):</label>
-          <input
-            type="number"
-            value={widthMM}
-            onChange={e => onWidthChange(+e.target.value)}
-            min={10}
-            className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <label className="font-medium text-sm text-gray-700">Altitude:</label>
-          <input
-            type="number"
-            value={altMult}
-            onChange={e => onAltMultChange(+e.target.value)}
-            min={0.1}
-            step={0.1}
-            className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
-          />
-        </div>
-      </>
-    );
-  }
+  return (
+    <>
+      <div className="flex items-center space-x-2">
+        <label className="font-medium text-sm text-gray-700">Shape:</label>
+        <select
+          value={shape}
+          onChange={e => onShapeChange(e.target.value as ShapeType)}
+          className="border-gray-300 rounded p-1 bg-white text-sm"
+        >
+          <option value="hexagon">Hexagon</option>
+          <option value="square">Square</option>
+          <option value="circle">Circle</option>
+        </select>
+      </div>
+      <div className="flex items-center space-x-2">
+        <label className="font-medium text-sm text-gray-700">Width (mm):</label>
+        <input
+          type="number"
+          value={widthMM}
+          onChange={e => onWidthChange(+e.target.value)}
+          min={10}
+          className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
+        />
+      </div>
+      <div className="flex items-center space-x-2">
+        <label className="font-medium text-sm text-gray-700">Altitude:</label>
+        <input
+          type="number"
+          value={altMult}
+          onChange={e => onAltMultChange(+e.target.value)}
+          min={0.1}
+          step={0.1}
+          className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
+        />
+      </div>
+    </>
+  );
+}
 
+export function FullFormControls({
+  shape,
+  onShapeChange,
+  widthMM,
+  onWidthChange,
+  altMult,
+  onAltMultChange,
+}: FormControlsProps) {
   return (
     <>
       <div className="mb-6">

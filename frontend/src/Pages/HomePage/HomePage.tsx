@@ -1,6 +1,7 @@
 import React from 'react';
+
 import { ShapeType } from '../../lib/types';
-import FormControls from '../../components/FormControls';
+import { FullFormControls } from '../../components/FormControls';
 import './HomePage.css';
 
 interface HomePageProps {
@@ -63,7 +64,7 @@ export default function HomePage({
         />
       </div>
 
-      <FormControls
+      <FullFormControls
         shape={shape}
         onShapeChange={onShapeChange}
         widthMM={widthMM}
