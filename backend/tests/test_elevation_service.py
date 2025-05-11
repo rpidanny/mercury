@@ -1,13 +1,13 @@
 import pytest
 import logging
-from app.services.elevation import ElevationService, create_elevation_service_from_flask
+from app.services.elevation import ElevationService
 from unittest.mock import patch, MagicMock
 
 
-def test_get_elevation_service_factory(app):
+def test_get_elevation_service_factory(app, test_data_path):
     """Test creating the ElevationService using the factory function."""
     with app.app_context():
-        service = create_elevation_service_from_flask(app)
+        service = ElevationService(logger=app.logger, dsm_path=test_data_path)
         assert service.dsm_path is not None
         assert service.logger is app.logger
 
@@ -23,11 +23,11 @@ def test_constructor_with_explicit_params():
     assert service.dsm_path == dsm_path
 
 
-def test_get_elevation_from_point(app, mock_rasterio):
+def test_get_elevation_from_point(app, test_data_path):
     """Test getting elevation for a single point."""
     with app.app_context():
         # Create service instance
-        service = create_elevation_service_from_flask(app)
+        service = ElevationService(logger=app.logger, dsm_path=test_data_path)
 
         # Test with coordinates near Mount Everest (within the test VRT file)
         elevation = service.get_point_elevation(27.98, 86.92)
@@ -37,11 +37,11 @@ def test_get_elevation_from_point(app, mock_rasterio):
         assert 7000 < elevation < 9000  # Reasonable range for Everest area
 
 
-def test_get_elevation_grid(app, mock_rasterio):
+def test_get_elevation_grid(app, test_data_path):
     """Test getting elevation for a grid of points."""
     with app.app_context():
         # Create service instance
-        service = create_elevation_service_from_flask(app)
+        service = ElevationService(logger=app.logger, dsm_path=test_data_path)
 
         # Use coordinates within the test VRT file (Mount Everest area)
         lat_vals = [27.97, 27.98, 27.99]

@@ -5,6 +5,7 @@ import importlib
 from app.config.config import Config
 import os.path
 import numpy as np
+from app.services.elevation import ElevationService
 
 
 # Important: Set up config for all tests
@@ -56,6 +57,13 @@ def app(monkeypatch, test_config):
 
     app = create_app()
     app.config.update({"TESTING": True})
+
+    # Create and add the elevation service to the app config
+    if "elevation_service" not in app.config:
+        elevation_service = ElevationService(
+            logger=app.logger, dsm_path=test_config.alos_data_path
+        )
+        app.config["elevation_service"] = elevation_service
 
     yield app
 

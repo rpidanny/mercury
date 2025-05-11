@@ -20,6 +20,7 @@ from app.utils.logger import configure_logging
 from app.routes.lookup import lookup_bp
 from app.routes.grid import grid_bp
 from app.version import VERSION
+from app.services.elevation import ElevationService
 
 
 def create_app():
@@ -27,10 +28,6 @@ def create_app():
     Create and configure the Flask application.
     """
     app = Flask(__name__)
-    # Load configuration
-    app.config["ALOS_DATA_PATH"] = config.alos_data_path
-    app.config["DEBUG"] = config.debug
-
     # Enable CORS
     CORS(app)
     # Configure logging
@@ -54,9 +51,19 @@ def create_app():
     def version():
         return jsonify({"version": VERSION})
 
-    # Register API blueprints
+    # Create single ElevationService instance
+    elevation_service = ElevationService(
+        logger=app.logger, dsm_path=config.alos_data_path
+    )
+
+    # Store in app for access in routes
+    app.config["elevation_service"] = elevation_service
+    app.config["app_config"] = config
+
+    # Register API blueprints with config
     app.register_blueprint(lookup_bp)
     app.register_blueprint(grid_bp)
+
     return app
 
 

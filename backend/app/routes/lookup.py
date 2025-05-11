@@ -3,7 +3,6 @@ Blueprint for elevation lookup endpoints.
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from app.services.elevation import create_elevation_service_from_flask
 
 lookup_bp = Blueprint("lookup", __name__, url_prefix="/api/v1")
 
@@ -20,7 +19,8 @@ def get_elevations():
     if not isinstance(locations, list):
         return jsonify({"error": "Missing or invalid 'locations' array"}), 400
 
-    elevation_service = create_elevation_service_from_flask(current_app)
+    # Get the shared elevation service instance
+    elevation_service = current_app.config["elevation_service"]
     results = []
 
     for loc in locations:

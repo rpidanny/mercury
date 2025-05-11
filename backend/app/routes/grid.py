@@ -3,7 +3,6 @@ Blueprint for elevation grid endpoints.
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from app.services.elevation import create_elevation_service_from_flask
 from app.utils.geometry import linspace
 
 grid_bp = Blueprint("grid", __name__, url_prefix="/api/v1")
@@ -31,7 +30,8 @@ def get_elevation_grid():
     lat_vals = linspace(min_lat, max_lat, res)
     lon_vals = linspace(min_lon, max_lon, res)
 
-    elevation_service = create_elevation_service_from_flask(current_app)
+    # Get the shared elevation service instance
+    elevation_service = current_app.config["elevation_service"]
     results, width, height = elevation_service.get_elevation_grid(
         lat_vals, lon_vals, res
     )

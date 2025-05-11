@@ -211,17 +211,3 @@ class ElevationService:
         This ensures the dataset is closed if the user forgets to call close().
         """
         self.close()
-
-
-# Factory function to create an ElevationService from a Flask app
-def create_elevation_service_from_flask(app) -> ElevationService:
-    """
-    Creates an ElevationService instance from a Flask application.
-
-    Args:
-        app: The Flask application
-
-    Returns:
-        An initialized ElevationService
-    """
-    return ElevationService(logger=app.logger, dsm_path=app.config["ALOS_DATA_PATH"])
