@@ -66,6 +66,31 @@ Once running, access the application at [http://localhost:5173](http://localhost
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
 
+### Commit Convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/) standards. Commit messages should be structured as follows:
+
+```
+<type>(<optional scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Common types include:
+
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools
+
+This convention is enforced both locally through `commitlint` with git hooks and in the CI pipeline for PRs.
+
 ## 📝 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
