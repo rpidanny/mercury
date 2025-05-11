@@ -9,6 +9,8 @@
     "gunicorn",
     "jsonify",
     "linspace",
+    "numpy",
+    "pydantic",
     "rasterio"
   ]
 }
