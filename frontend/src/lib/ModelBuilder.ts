@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
 import Delaunator from "delaunator";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+
 import Config from "./config";
 import { TerrainGridPoint, TerrainTrackPoint, ShapeType } from "./types";
 import { TerrainData } from "./TerrainGenerator";
@@ -34,123 +35,150 @@ export default class ModelBuilder {
     embossText: string,
     font: Font | null
   ): BuildResult {
-    // 1. Setup
-    const { widthGeo } = data;
-    const scale = modelWidthMM / widthGeo;
-    const shape = this.createShape(shapeType, widthGeo);
-
-    // 2. Prepare data
-    const scaledPoints = this.filterAndScalePoints(
+    const builder = new ModelBuilder();
+    return builder.buildModel(
       data,
-      scale,
+      modelWidthMM,
       altitudeMultiplier,
-      shape
-    );
-    const trackPoints3D = this.createTrackPoints(
-      data,
-      scale,
-      altitudeMultiplier,
-      scaledPoints
-    );
-    const delaunay = this.createDelaunay(scaledPoints);
-
-    // 3. Terrain
-    const terrainGeo = this.buildTerrainGeometry(scaledPoints, delaunay);
-    terrainGeo.computeBoundingBox();
-    const minZ = terrainGeo.boundingBox?.min.z ?? 0;
-    const maxZ = terrainGeo.boundingBox?.max.z ?? 0;
-    const baseZ = minZ - Config.BASE_THICKNESS_MM;
-
-    // 4. Path
-    const pathGeo = this.buildPathGeometry(trackPoints3D);
-
-    // 5. Base & Walls
-    const baseGeo = this.buildBaseGeometry(shape, scale, baseZ);
-    const wallGeo = this.buildWallGeometry(scaledPoints, delaunay, baseZ);
-
-    // 6. Text Platform & Emboss
-    const { platformGeo, textGeo, textOverlapWarning } = this.buildTextEffects({
+      shapeType,
       embossText,
-      font,
-      shape,
-      scale,
-      trackPoints: trackPoints3D,
-      terrainMaxZ: maxZ,
-      baseZ,
-    });
+      font
+    );
+  }
 
-    // 7. Materials & Meshes
+  private scaledPoints: ScaledPoint[] = [];
+  private trackPoints3D: THREE.Vector3[] = [];
+  private delaunay: Delaunator<Float64Array> | null = null;
+  private terrainMinZ = 0;
+  private terrainMaxZ = 0;
+  private baseZ = 0;
+  private shape: IShape | null = null;
+  private scale = 1;
+  private data: TerrainData | null = null;
+  private altitudeMultiplier = 1;
+
+  private constructor() {}
+
+  private buildModel(
+    data: TerrainData,
+    modelWidthMM: number,
+    altitudeMultiplier: number,
+    shapeType: ShapeType,
+    embossText: string,
+    font: Font | null
+  ): BuildResult {
+    // Store parameters
+    this.data = data;
+    this.scale = modelWidthMM / data.widthGeo;
+    this.altitudeMultiplier = altitudeMultiplier;
+
+    // 1. Create shape and prepare data
+    this.shape = this.createShape(shapeType);
+    this.preparePoints();
+
+    // 2. Build all geometries
+    const terrainGeo = this.buildTerrainGeometry();
+    const pathGeo = this.buildPathGeometry();
+    const baseGeo = this.buildBaseGeometry();
+    const wallGeo = this.buildWallGeometry();
+
+    // 3. Handle text effects
+    const hasText = Boolean(embossText && font);
+    const { platformGeo, textGeo, textOverlapWarning } = this.buildTextEffects(
+      embossText,
+      font
+    );
+
+    // 4. Create materials and meshes
     const materials = this.createMaterials();
     const meshes = this.createMeshes(
       { terrainGeo, pathGeo, baseGeo, wallGeo, platformGeo, textGeo },
       materials,
-      Boolean(embossText && font)
+      hasText
     );
 
-    // 8. Group and Return
+    // 5. Group and return
     const group = this.groupMeshes(meshes);
     return { mesh: group, textOverlapWarning };
   }
 
-  private static filterAndScalePoints(
-    data: TerrainData,
-    scale: number,
-    altitudeMultiplier: number,
-    shape: IShape
-  ): ScaledPoint[] {
-    return data.gridPoints
+  private preparePoints(): void {
+    if (!this.shape || !this.data) {
+      throw new Error("Shape and data must be set before preparing points");
+    }
+
+    // Filter and scale grid points
+    this.scaledPoints = this.filterAndScalePoints();
+
+    // Create track points
+    this.trackPoints3D = this.createTrackPoints();
+
+    // Create delaunay triangulation
+    this.delaunay = Delaunator.from(
+      this.scaledPoints.map((pt) => [pt.x, pt.y])
+    );
+
+    // Calculate z-range for the terrain
+    const zValues = this.scaledPoints.map((p) => p.z);
+    this.terrainMinZ = Math.min(...zValues);
+    this.terrainMaxZ = Math.max(...zValues);
+    this.baseZ = this.terrainMinZ - Config.BASE_THICKNESS_MM;
+  }
+
+  private filterAndScalePoints(): ScaledPoint[] {
+    if (!this.shape || !this.data) {
+      throw new Error("Shape and data must be set before filtering points");
+    }
+
+    return this.data.gridPoints
       .filter((p: TerrainGridPoint) => {
-        const { x, y } = data.geoToXY(p.lat, p.lon);
-        return shape.contains({ x, y });
+        const { x, y } = this.data!.geoToXY(p.lat, p.lon);
+        return this.shape!.contains({ x, y });
       })
       .map((p: TerrainGridPoint) => {
-        const { x, y } = data.geoToXY(p.lat, p.lon);
+        const { x, y } = this.data!.geoToXY(p.lat, p.lon);
         return {
-          x: x * scale,
-          y: y * scale,
-          z: (p.elevation ?? 0) * altitudeMultiplier * scale,
+          x: x * this.scale,
+          y: y * this.scale,
+          z: (p.elevation ?? 0) * this.altitudeMultiplier * this.scale,
           originalIndex: p.originalIndex!,
         };
       });
   }
 
-  private static createTrackPoints(
-    data: TerrainData,
-    scale: number,
-    altitudeMultiplier: number,
-    scaledGridPoints: ScaledPoint[]
-  ): THREE.Vector3[] {
-    // Create delaunay triangulation for grid points for interpolation
+  private createTrackPoints(): THREE.Vector3[] {
+    if (!this.data) {
+      throw new Error("Data must be set before creating track points");
+    }
+
+    // Create delaunay for grid points to use in interpolation
     const gridDelaunay = Delaunator.from(
-      scaledGridPoints.map((pt) => [pt.x, pt.y])
+      this.scaledPoints.map((pt) => [pt.x, pt.y])
     );
 
-    return data.trackPoints.map((p: TerrainTrackPoint) => {
-      const { x, y } = data.geoToXY(p.lat, p.lon);
-      const scaledX = x * scale;
-      const scaledY = y * scale;
+    return this.data.trackPoints.map((p: TerrainTrackPoint) => {
+      const { x, y } = this.data!.geoToXY(p.lat, p.lon);
+      const scaledX = x * this.scale;
+      const scaledY = y * this.scale;
 
-      // Find the closest point on the terrain to ensure alignment
-      const closestTriangle = this.findContainingTriangle(
+      // Find containing triangle for interpolation
+      const containingTriangle = this.findContainingTriangle(
         scaledX,
         scaledY,
-        scaledGridPoints,
         gridDelaunay
       );
 
-      // Calculate z value using barycentric interpolation or use point's elevation if not found
-      let scaledZ = (p.elevation ?? 0) * altitudeMultiplier * scale;
-      if (closestTriangle) {
-        // Use barycentric interpolation for more accurate z value
+      // Calculate z value using interpolation or point's elevation
+      let scaledZ = (p.elevation ?? 0) * this.altitudeMultiplier * this.scale;
+      if (containingTriangle) {
         scaledZ = this.interpolateElevation(
           scaledX,
           scaledY,
-          closestTriangle,
-          scaledGridPoints
+          containingTriangle
         );
       }
 
-      // Add a small offset to ensure the path is visible above the terrain
+      // Add a small offset to ensure the path is visible above terrain
       return new THREE.Vector3(
         scaledX,
         scaledY,
@@ -159,68 +187,62 @@ export default class ModelBuilder {
     });
   }
 
-  /**
-   * Find the triangle that contains the given point using Delaunay triangulation
-   */
-  private static findContainingTriangle(
+  private findContainingTriangle(
     x: number,
     y: number,
-    points: ScaledPoint[],
     delaunay: Delaunator<Float64Array>
   ): [number, number, number] | null {
-    // Implementation of point-in-triangle test
-    // For each triangle in the delaunay triangulation
+    // Check each triangle in the delaunay triangulation
     for (let i = 0; i < delaunay.triangles.length; i += 3) {
       const a = delaunay.triangles[i];
       const b = delaunay.triangles[i + 1];
       const c = delaunay.triangles[i + 2];
 
-      // Check if point (x,y) is inside this triangle
-      const ax = points[a].x;
-      const ay = points[a].y;
-      const bx = points[b].x;
-      const by = points[b].y;
-      const cx = points[c].x;
-      const cy = points[c].y;
+      // Get triangle vertex coordinates
+      const ax = this.scaledPoints[a].x;
+      const ay = this.scaledPoints[a].y;
+      const bx = this.scaledPoints[b].x;
+      const by = this.scaledPoints[b].y;
+      const cx = this.scaledPoints[c].x;
+      const cy = this.scaledPoints[c].y;
 
-      // Using barycentric coordinates to check if point is in triangle
+      // Calculate determinant for barycentric coordinates
       const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
       if (Math.abs(d) < 1e-10) continue; // Skip degenerate triangles
 
+      // Calculate barycentric coordinates
       const wa = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d;
       const wb = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d;
       const wc = 1 - wa - wb;
 
+      // If point is inside triangle
       if (wa >= 0 && wb >= 0 && wc >= 0) {
-        return [a, b, c]; // Found the containing triangle
+        return [a, b, c];
       }
     }
 
-    return null; // Point is not in any triangle
+    return null; // Point not in any triangle
   }
 
-  /**
-   * Interpolate the elevation at point (x,y) using barycentric coordinates
-   */
-  private static interpolateElevation(
+  private interpolateElevation(
     x: number,
     y: number,
-    triangle: [number, number, number],
-    points: ScaledPoint[]
+    triangle: [number, number, number]
   ): number {
     const [a, b, c] = triangle;
 
-    const ax = points[a].x;
-    const ay = points[a].y;
-    const az = points[a].z;
+    // Get triangle vertex coordinates and z-values
+    const ax = this.scaledPoints[a].x;
+    const ay = this.scaledPoints[a].y;
+    const az = this.scaledPoints[a].z;
 
-    const bx = points[b].x;
-    const by = points[b].y;
-    const bz = points[b].z;
+    const bx = this.scaledPoints[b].x;
+    const by = this.scaledPoints[b].y;
+    const bz = this.scaledPoints[b].z;
 
-    const cx = points[c].x;
-    const cy = points[c].y;
-    const cz = points[c].z;
+    const cx = this.scaledPoints[c].x;
+    const cy = this.scaledPoints[c].y;
+    const cz = this.scaledPoints[c].z;
 
     // Calculate barycentric coordinates
     const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
@@ -228,108 +250,129 @@ export default class ModelBuilder {
     const wb = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d;
     const wc = 1 - wa - wb;
 
-    // Interpolate z value
+    // Interpolate z-value using barycentric coordinates
     return wa * az + wb * bz + wc * cz;
   }
 
-  /**
-   * Creates a Delaunay triangulation for a set of 2D points.
-   */
-  private static createDelaunay(
-    points: ScaledPoint[]
-  ): Delaunator<Float64Array> {
-    // Create a Delaunay triangulation for 2D points (returns Float64Array coords)
-    return Delaunator.from(points.map((pt) => [pt.x, pt.y]));
-  }
-
-  private static buildTerrainGeometry(
-    points: ScaledPoint[],
-    delaunay: Delaunator<Float64Array>
-  ): THREE.BufferGeometry {
+  private buildTerrainGeometry(): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry();
-    geometry.setIndex(Array.from(delaunay.triangles));
-    const verts = points.flatMap(({ x, y, z }) => [x, y, z]);
+
+    if (!this.delaunay) {
+      throw new Error("Delaunay triangulation must be created first");
+    }
+
+    // Set triangle indices
+    geometry.setIndex(Array.from(this.delaunay.triangles));
+
+    // Set vertex positions
+    const verts = this.scaledPoints.flatMap(({ x, y, z }) => [x, y, z]);
     geometry.setAttribute(
       "position",
       new THREE.Float32BufferAttribute(verts, 3)
     );
+
     geometry.computeVertexNormals();
     return geometry;
   }
 
-  private static buildPathGeometry(
-    trackPoints: THREE.Vector3[]
-  ): THREE.BufferGeometry {
-    if (trackPoints.length < 2) {
+  private buildPathGeometry(): THREE.BufferGeometry {
+    // Return empty geometry if insufficient track points
+    if (this.trackPoints3D.length < 2) {
       return new THREE.BufferGeometry();
     }
-    const curve = new THREE.CatmullRomCurve3(trackPoints, false);
+
+    // Create a smooth curve through the track points
+    const curve = new THREE.CatmullRomCurve3(this.trackPoints3D, false);
+
+    // Create a tube geometry around the curve
     return new THREE.TubeGeometry(
       curve,
-      trackPoints.length * 5,
-      Config.PATH_RADIUS_MM,
-      16,
-      false
+      this.trackPoints3D.length * 5, // Curve segments
+      Config.PATH_RADIUS_MM, // Tube radius
+      16, // Radial segments
+      false // Closed
     );
   }
 
-  private static buildBaseGeometry(
-    shape: IShape,
-    scale: number,
-    baseZ: number
-  ): THREE.BufferGeometry {
-    const bbox2d = shape.getBoundingBox();
+  private buildBaseGeometry(): THREE.BufferGeometry {
+    if (!this.shape) {
+      throw new Error("Shape must be created before building base geometry");
+    }
+
+    const bbox2d = this.shape.getBoundingBox();
     const geoW = bbox2d.maxX - bbox2d.minX;
     let geo: THREE.BufferGeometry;
-    if (shape.getType() === "circle") {
-      const radiusMM = (geoW * scale * Config.BASE_OVERLAP_FACTOR) / 2;
+
+    // Handle circle shape differently
+    if (this.shape.getType() === "circle") {
+      const radiusMM = (geoW * this.scale * Config.BASE_OVERLAP_FACTOR) / 2;
       const circle = new THREE.Shape();
       circle.absarc(0, 0, radiusMM, 0, Math.PI * 2, false);
       geo = new THREE.ShapeGeometry(circle);
     } else {
-      const verts2D = shape
+      // For other shapes, use their vertices
+      const verts2D = this.shape
         .getVertices()
         .map(
           (v) =>
             new THREE.Vector2(
-              v.x * scale * Config.BASE_OVERLAP_FACTOR,
-              v.y * scale * Config.BASE_OVERLAP_FACTOR
+              v.x * this.scale * Config.BASE_OVERLAP_FACTOR,
+              v.y * this.scale * Config.BASE_OVERLAP_FACTOR
             )
         );
       geo = new THREE.ShapeGeometry(new THREE.Shape(verts2D));
     }
-    geo.translate(0, 0, baseZ);
+
+    // Move base to correct z position
+    geo.translate(0, 0, this.baseZ);
     return geo;
   }
 
-  private static buildWallGeometry(
-    points: ScaledPoint[],
-    delaunay: Delaunator<Float64Array>,
-    baseZ: number
-  ): THREE.BufferGeometry {
-    // Extract hull vertices indices as an array of numbers
-    const hull: number[] = Array.from(delaunay.hull);
+  private buildWallGeometry(): THREE.BufferGeometry {
+    const geo = new THREE.BufferGeometry();
+
+    if (!this.delaunay) {
+      return geo;
+    }
+
+    // Extract hull vertices indices
+    const hull: number[] = Array.from(this.delaunay.hull);
     const boundaryIdx = hull
-      .map((i) => points[i]?.originalIndex)
+      .map((i) => this.scaledPoints[i]?.originalIndex)
       .filter((i) => i !== undefined) as number[];
+
+    if (boundaryIdx.length === 0) {
+      return geo;
+    }
+
     const wallVerts: number[] = [];
     const wallIdx: number[] = [];
+
+    // Build wall triangles by connecting each pair of boundary points
     boundaryIdx.forEach((orig, i) => {
       const next = boundaryIdx[(i + 1) % boundaryIdx.length];
-      const p1 = points.find((pt) => pt.originalIndex === orig);
-      const p2 = points.find((pt) => pt.originalIndex === next);
+      const p1 = this.scaledPoints.find((pt) => pt.originalIndex === orig);
+      const p2 = this.scaledPoints.find((pt) => pt.originalIndex === next);
+
       if (!p1 || !p2) return;
+
+      // Create top and bottom vertices for the wall segment
       const v1 = new THREE.Vector3(p1.x, p1.y, p1.z);
       const v2 = new THREE.Vector3(p2.x, p2.y, p2.z);
-      const b1 = new THREE.Vector3(p1.x, p1.y, baseZ);
-      const b2 = new THREE.Vector3(p2.x, p2.y, baseZ);
+      const b1 = new THREE.Vector3(p1.x, p1.y, this.baseZ);
+      const b2 = new THREE.Vector3(p2.x, p2.y, this.baseZ);
+
       const baseIndex = wallVerts.length / 3;
+
+      // Add the vertices
       wallVerts.push(
         ...v1.toArray(),
         ...b1.toArray(),
         ...b2.toArray(),
         ...v2.toArray()
       );
+
+      // Add triangle indices (two triangles per wall segment)
       wallIdx.push(
         baseIndex,
         baseIndex + 1,
@@ -339,7 +382,7 @@ export default class ModelBuilder {
         baseIndex + 3
       );
     });
-    const geo = new THREE.BufferGeometry();
+
     if (wallVerts.length > 0) {
       geo.setAttribute(
         "position",
@@ -348,61 +391,60 @@ export default class ModelBuilder {
       geo.setIndex(wallIdx);
       geo.computeVertexNormals();
     }
+
     return geo;
   }
 
-  private static buildTextEffects(options: {
-    embossText: string;
-    font: Font | null;
-    shape: IShape;
-    scale: number;
-    trackPoints: THREE.Vector3[];
-    terrainMaxZ: number;
-    baseZ: number;
-  }): {
+  private buildTextEffects(
+    embossText: string,
+    font: Font | null
+  ): {
     platformGeo: THREE.BufferGeometry;
     textGeo: THREE.BufferGeometry;
     textOverlapWarning: boolean;
   } {
-    const { embossText, font, shape, scale, trackPoints, terrainMaxZ, baseZ } =
-      options;
-
     let platformGeo = new THREE.BufferGeometry();
     let textGeo = new THREE.BufferGeometry();
     let textOverlapWarning = false;
 
-    if (embossText && font) {
-      const bbox2d = shape.getBoundingBox();
-      const hexRadius = bbox2d.maxX * scale * Config.BASE_OVERLAP_FACTOR;
+    // Only process text if both text and font are provided
+    if (embossText && font && this.shape) {
+      const bbox2d = this.shape.getBoundingBox();
+      const hexRadius = bbox2d.maxX * this.scale * Config.BASE_OVERLAP_FACTOR;
+
+      // Calculate platform dimensions
       const margin = hexRadius * Config.TEXT_PLATFORM_MARGIN_FACTOR;
       const pWidth = Math.max(1, hexRadius * Config.TEXT_PLATFORM_WIDTH_FACTOR);
       const pDepth = Math.max(1, hexRadius * Config.TEXT_PLATFORM_DEPTH_FACTOR);
-      const height = terrainMaxZ + Config.TEXT_PLATFORM_HEIGHT_OFFSET - baseZ;
+      const height =
+        this.terrainMaxZ + Config.TEXT_PLATFORM_HEIGHT_OFFSET - this.baseZ;
       const yCenter = -hexRadius + margin + pDepth / 2;
 
-      // Overlap check
+      // Check for overlap with path
       const minX = -pWidth / 2 - Config.TEXT_PATH_BUFFER;
       const maxX = pWidth / 2 + Config.TEXT_PATH_BUFFER;
       const minY = yCenter - pDepth / 2 - Config.TEXT_PATH_BUFFER;
       const maxY = yCenter + pDepth / 2 + Config.TEXT_PATH_BUFFER;
-      textOverlapWarning = trackPoints.some(
+
+      textOverlapWarning = this.trackPoints3D.some(
         (pt) => pt.x >= minX && pt.x <= maxX && pt.y >= minY && pt.y <= maxY
       );
 
-      // Platform
+      // Create platform geometry
       const ps = new THREE.Shape();
       ps.moveTo(-pWidth / 2, -pDepth / 2);
       ps.lineTo(pWidth / 2, -pDepth / 2);
       ps.lineTo(pWidth / 2, pDepth / 2);
       ps.lineTo(-pWidth / 2, pDepth / 2);
       ps.closePath();
+
       platformGeo = new THREE.ExtrudeGeometry(ps, {
         depth: height,
         bevelEnabled: false,
       });
-      platformGeo.translate(0, yCenter, baseZ);
+      platformGeo.translate(0, yCenter, this.baseZ);
 
-      // Text
+      // Create text geometry
       textGeo = new TextGeometry(embossText, {
         font,
         size: pWidth * Config.TEXT_SIZE_FACTOR,
@@ -415,11 +457,12 @@ export default class ModelBuilder {
     return { platformGeo, textGeo, textOverlapWarning };
   }
 
-  private static createMaterials() {
+  private createMaterials() {
     const palette = [
       0x1f77b4, 0xff7f0e, 0x2ca02c, 0xd62728, 0x9467bd, 0x8c564b, 0xe377c2,
       0x7f7f7f, 0xbcbd22, 0x17becf,
     ];
+
     return {
       terrain: new THREE.MeshStandardMaterial({
         color: palette[7],
@@ -466,7 +509,7 @@ export default class ModelBuilder {
     };
   }
 
-  private static createMeshes(
+  private createMeshes(
     geos: {
       terrainGeo: THREE.BufferGeometry;
       pathGeo: THREE.BufferGeometry;
@@ -475,7 +518,7 @@ export default class ModelBuilder {
       platformGeo: THREE.BufferGeometry;
       textGeo: THREE.BufferGeometry;
     },
-    mats: ReturnType<typeof ModelBuilder.createMaterials>,
+    mats: ReturnType<typeof ModelBuilder.prototype.createMaterials>,
     includeText: boolean
   ): THREE.Mesh[] {
     const meshes: THREE.Mesh[] = [
@@ -484,16 +527,24 @@ export default class ModelBuilder {
       new THREE.Mesh(geos.baseGeo, mats.base),
       new THREE.Mesh(geos.wallGeo, mats.wall),
     ];
+
     if (includeText) {
       meshes.push(
         new THREE.Mesh(geos.platformGeo, mats.textPlatform),
         new THREE.Mesh(geos.textGeo, mats.text)
       );
     }
+
     return meshes;
   }
 
-  static createShape(shapeType: ShapeType, widthGeo: number): IShape {
+  private createShape(shapeType: ShapeType): IShape {
+    if (!this.data) {
+      throw new Error("Data must be set before creating shape");
+    }
+
+    const widthGeo = this.data.widthGeo;
+
     switch (shapeType) {
       case "hexagon":
         return new HexagonShape(widthGeo / Math.sqrt(3));
@@ -506,7 +557,7 @@ export default class ModelBuilder {
     }
   }
 
-  static groupMeshes(meshes: THREE.Object3D[]): THREE.Group {
+  private groupMeshes(meshes: THREE.Object3D[]): THREE.Group {
     const group = new THREE.Group();
     meshes.forEach((m) => group.add(m));
     return group;
