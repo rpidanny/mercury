@@ -188,4 +188,62 @@ describe("ModelBuilder", () => {
     expect(smallResult.mesh.children.length).toBeGreaterThan(0);
     expect(largeResult.mesh.children.length).toBeGreaterThan(0);
   });
+
+  it("should handle large terrain datasets without stack overflow", () => {
+    // Create a large terrain dataset with thousands of points
+    const largeTerrainData = createMockTerrainData();
+
+    // Generate a large number of grid points (1,000,000+)
+    const largeGridPoints = [];
+    const gridSize = 1000; // 1000x1000 = 1,000,000 points
+    const latStep =
+      (largeTerrainData.boundsGeo.maxLat - largeTerrainData.boundsGeo.minLat) /
+      gridSize;
+    const lonStep =
+      (largeTerrainData.boundsGeo.maxLon - largeTerrainData.boundsGeo.minLon) /
+      gridSize;
+
+    let index = 0;
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const lat = largeTerrainData.boundsGeo.minLat + i * latStep;
+        const lon = largeTerrainData.boundsGeo.minLon + j * lonStep;
+        // Create varying elevations
+        const elevation = 380 + Math.sin(i / 10) * 20 + Math.cos(j / 10) * 20;
+
+        largeGridPoints.push({
+          lat,
+          lon,
+          elevation,
+          originalIndex: index++,
+        });
+      }
+    }
+
+    // Replace grid points with our large array
+    largeTerrainData.gridPoints = largeGridPoints;
+
+    // Test parameters
+    const modelWidthMM = 100;
+    const altitudeMultiplier = 1;
+    const shapeType: ShapeType = "square";
+
+    // This would previously cause stack overflow
+    const result = ModelBuilder.build(
+      largeTerrainData,
+      modelWidthMM,
+      altitudeMultiplier,
+      shapeType,
+      "",
+      null
+    );
+
+    // Verify the model was created successfully
+    expect(result).toHaveProperty("mesh");
+    expect(result.mesh).toBeInstanceOf(THREE.Group);
+    expect(result.mesh.children.length).toBeGreaterThan(0);
+
+    // The test passing without an error is the main verification,
+    // as it would previously throw a stack overflow error
+  });
 });
