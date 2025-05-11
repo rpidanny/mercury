@@ -1,21 +1,34 @@
 # Use an official Python runtime as a parent image
-FROM python:3.13-alpine
+FROM python:3.13-slim
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app/
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    ALOS_DSM_PATH=/data/geo_AW3D30.vrt
 
-# Install any needed packages specified in requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libgdal-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
+# Copy the application code
+COPY . .
 
-# Define environment variable
-ENV FLASK_APP=app/main.py
-ENV FLASK_RUN_HOST=0.0.0.0
+# Create a non-root user
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
 
-# Run app.py when the container launches
-CMD ["flask", "run"] 
+# Expose the port the app runs on
+EXPOSE 8848
+
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:8848", "--workers", "8", "--timeout", "120", "app.app:app"]
