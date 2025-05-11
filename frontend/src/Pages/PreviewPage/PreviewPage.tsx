@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import Renderer from '../../lib/Renderer';
 import { ShapeType } from '../../lib/types';
+import { CompactFormControls } from '../../components/FormControls';
 import type { Object3D } from 'three';
 import './PreviewPage.css';
 
@@ -46,39 +47,15 @@ export default function PreviewPage({
     <>
       <div id="scene-container" ref={containerRef} />
       <div className="absolute bottom-4 left-4 z-10 flex flex-col space-y-2 bg-white bg-opacity-80 p-3 rounded-lg shadow-lg">
-        <div className="flex items-center space-x-2">
-          <label className="font-medium text-sm text-gray-700">Shape:</label>
-          <select
-            value={shape}
-            onChange={e => onShapeChange(e.target.value as ShapeType)}
-            className="border-gray-300 rounded p-1 bg-white text-sm"
-          >
-            <option value="hexagon">Hexagon</option>
-            <option value="square">Square</option>
-            <option value="circle">Circle</option>
-          </select>
-        </div>
-        <div className="flex items-center space-x-2">
-          <label className="font-medium text-sm text-gray-700">Width (mm):</label>
-          <input
-            type="number"
-            value={widthMM}
-            onChange={e => onWidthChange(+e.target.value)}
-            min={10}
-            className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <label className="font-medium text-sm text-gray-700">Altitude:</label>
-          <input
-            type="number"
-            value={altMult}
-            onChange={e => onAltMultChange(+e.target.value)}
-            min={0.1}
-            step={0.1}
-            className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
-          />
-        </div>
+        <CompactFormControls
+          shape={shape}
+          onShapeChange={onShapeChange}
+          widthMM={widthMM}
+          onWidthChange={onWidthChange}
+          altMult={altMult}
+          onAltMultChange={onAltMultChange}
+        />
+        
         <div className="flex space-x-2">
           <button
             onClick={onRegenerate}
