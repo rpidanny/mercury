@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "prepare": "husky",
+    "prepare": "[ -n \"$CI\" ] && echo 'Skipping husky in CI' || husky",
     "commitlint": "commitlint --edit",
     "semantic-release": "semantic-release"
   },
