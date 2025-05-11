@@ -4,6 +4,9 @@ Mercury transforms your GPX route files into stunning 3D visualizations of the s
 
 <div align="center">
   <em>Turn your adventures into physical mementos you can hold in your hand!</em>
+  <br />
+  <br />
+  <img src="pokhara-marathon.jpg" alt="Mercury Screenshot" width="300" />
 </div>
 
 ## ✨ Features
