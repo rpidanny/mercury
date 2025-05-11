@@ -2,6 +2,7 @@
   "words": [
     "alos",
     "appuser",
+    "commitlint",
     "flask",
     "gunicorn",
     "jsonify",

@@ -66,6 +66,42 @@ Once running, access the application at [http://localhost:5173](http://localhost
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
 
+### Commit Convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/) standards. Commit messages should be structured as follows:
+
+```
+<type>(<optional scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Common types include:
+
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools
+
+This convention is enforced both locally through `commitlint` and in the CI pipeline.
+
+### CI/CD
+
+The project uses GitHub Actions for continuous integration:
+
+- All PRs to main are checked with `commitlint` to ensure they follow the commit message convention
+- When changes are merged to the main branch, `semantic-release` automatically:
+  - Determines the next version based on commit messages
+  - Updates version numbers in both frontend and backend
+  - Creates a GitHub release with automatically generated release notes
+  - Tags the repository with the new version
+
 ## 📝 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
