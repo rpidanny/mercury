@@ -89,18 +89,7 @@ Common types include:
 - `test`: Adding missing tests or correcting existing tests
 - `chore`: Changes to the build process or auxiliary tools
 
-This convention is enforced both locally through `commitlint` and in the CI pipeline.
-
-### CI/CD
-
-The project uses GitHub Actions for continuous integration:
-
-- All PRs to main are checked with `commitlint` to ensure they follow the commit message convention
-- When changes are merged to the main branch, `semantic-release` automatically:
-  - Determines the next version based on commit messages
-  - Updates version numbers in both frontend and backend
-  - Creates a GitHub release with automatically generated release notes
-  - Tags the repository with the new version
+This convention is enforced both locally through `commitlint` with git hooks and in the CI pipeline for PRs.
 
 ## 📝 License
 
