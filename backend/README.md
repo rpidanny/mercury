@@ -7,7 +7,11 @@ The backend service for the Mercury application, providing elevation data APIs.
 1. Install dependencies:
 
    ```bash
+   # For production
    pip install -r requirements.txt
+
+   # For development (includes testing dependencies)
+   pip install -r requirements-dev.txt
    ```
 
 2. Set environment variables:
