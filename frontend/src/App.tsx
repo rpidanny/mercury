@@ -1,4 +1,4 @@
-import { useReducer, useEffect } from 'react';
+import { useReducer, useEffect, useCallback } from 'react';
 
 import GPXParser from './lib/GPXParser';
 import TerrainGenerator from './lib/TerrainGenerator';
@@ -15,99 +15,155 @@ import LoadingModal from './components/LoadingModal';
 // Define app state and action types
 type AppState = {
   file: File | null;
-  shape: ShapeType;
-  widthMM: number;
-  altMult: number;
-  gridRes: number;
-  paddingFac: number;
-  embossText: string;
-  status: string;
-  loading: boolean;
-  font: Font | null;
-  terrainData: TerrainData | null;
-  rotationAngle: number;
+  modelConfig: {
+    shape: ShapeType;
+    widthMM: number;
+    altMult: number;
+    gridRes: number;
+    paddingFac: number;
+    embossText: string;
+    rotationAngle: number;
+  };
+  ui: {
+    status: string;
+    loading: boolean;
+  };
+  resources: {
+    font: Font | null;
+    terrainData: TerrainData | null;
+  };
 };
 
 type AppAction = 
   | { type: 'SET_FILE', payload: File | null }
-  | { type: 'SET_SHAPE', payload: ShapeType }
-  | { type: 'SET_WIDTH_MM', payload: number }
-  | { type: 'SET_ALT_MULT', payload: number }
-  | { type: 'SET_GRID_RES', payload: number }
-  | { type: 'SET_PADDING_FAC', payload: number }
-  | { type: 'SET_EMBOSS_TEXT', payload: string }
+  | { type: 'UPDATE_MODEL_CONFIG', payload: Partial<AppState['modelConfig']> }
   | { type: 'SET_STATUS', payload: string }
   | { type: 'SET_LOADING', payload: boolean }
   | { type: 'SET_LOADING_WITH_STATUS', payload: { loading: boolean, status: string } }
   | { type: 'SET_FONT', payload: Font | null }
   | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
-  | { type: 'SET_ROTATION_ANGLE', payload: number };
+  | { type: 'RESET_TERRAIN' };
 
 // Initial state
 const initialState: AppState = {
   file: null,
-  shape: 'hexagon',
-  widthMM: 100,
-  altMult: 1,
-  gridRes: 500,
-  paddingFac: 4.0,
-  embossText: '',
-  status: '',
-  loading: false,
-  font: null,
-  terrainData: null,
-  rotationAngle: 0
+  modelConfig: {
+    shape: 'hexagon',
+    widthMM: 100,
+    altMult: 1,
+    gridRes: 500,
+    paddingFac: 4.0,
+    embossText: '',
+    rotationAngle: 0
+  },
+  ui: {
+    status: '',
+    loading: false
+  },
+  resources: {
+    font: null,
+    terrainData: null
+  }
 };
 
 // Reducer function
 function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
-    case 'SET_FILE': return { ...state, file: action.payload };
-    case 'SET_SHAPE': return { ...state, shape: action.payload };
-    case 'SET_WIDTH_MM': return { ...state, widthMM: action.payload };
-    case 'SET_ALT_MULT': return { ...state, altMult: action.payload };
-    case 'SET_GRID_RES': return { ...state, gridRes: action.payload };
-    case 'SET_PADDING_FAC': return { ...state, paddingFac: action.payload };
-    case 'SET_EMBOSS_TEXT': return { ...state, embossText: action.payload };
-    case 'SET_STATUS': return { ...state, status: action.payload };
-    case 'SET_LOADING': return { ...state, loading: action.payload };
+    case 'SET_FILE': 
+      return { ...state, file: action.payload };
+    
+    case 'UPDATE_MODEL_CONFIG': 
+      return { 
+        ...state, 
+        modelConfig: { 
+          ...state.modelConfig, 
+          ...action.payload 
+        } 
+      };
+    
+    case 'SET_STATUS': 
+      return { 
+        ...state, 
+        ui: { 
+          ...state.ui, 
+          status: action.payload 
+        } 
+      };
+    
+    case 'SET_LOADING': 
+      return { 
+        ...state, 
+        ui: { 
+          ...state.ui, 
+          loading: action.payload 
+        } 
+      };
+    
     case 'SET_LOADING_WITH_STATUS': 
       return { 
         ...state, 
-        loading: action.payload.loading, 
-        status: action.payload.status 
+        ui: { 
+          loading: action.payload.loading, 
+          status: action.payload.status 
+        } 
       };
-    case 'SET_FONT': return { ...state, font: action.payload };
-    case 'SET_TERRAIN_DATA': return { ...state, terrainData: action.payload };
-    case 'SET_ROTATION_ANGLE': return { ...state, rotationAngle: action.payload };
-    default: return state;
+    
+    case 'SET_FONT': 
+      return { 
+        ...state, 
+        resources: { 
+          ...state.resources, 
+          font: action.payload 
+        } 
+      };
+    
+    case 'SET_TERRAIN_DATA': 
+      return { 
+        ...state, 
+        resources: { 
+          ...state.resources, 
+          terrainData: action.payload 
+        } 
+      };
+    
+    case 'RESET_TERRAIN': 
+      return { 
+        ...state, 
+        resources: { 
+          ...state.resources, 
+          terrainData: null 
+        } 
+      };
+    
+    default: 
+      return state;
   }
 }
 
 function App() {
   const [state, dispatch] = useReducer(appReducer, initialState);
-  const { 
-    file, shape, widthMM, altMult, gridRes, paddingFac, 
-    embossText, status, loading, font, terrainData, rotationAngle 
-  } = state;
+  const { file, modelConfig, ui, resources } = state;
+  const { loading, status } = ui;
+  const { font, terrainData } = resources;
 
   // Load font on mount
   useEffect(() => {
     const loader = new FontLoader();
     loader.load(
       Config.FONT_URL,
-      (f: Font) => dispatch({ type: 'SET_FONT', payload: f }),
+      (loadedFont: Font) => dispatch({ type: 'SET_FONT', payload: loadedFont }),
       undefined,
       () => dispatch({ type: 'SET_STATUS', payload: 'Error loading font, emboss disabled' })
     );
   }, []);
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     if (!file) { 
       dispatch({ type: 'SET_STATUS', payload: 'Select a GPX file' });
       return; 
     }
-    if (!font && embossText) { 
+    
+    if (!font && modelConfig.embossText) { 
       dispatch({ type: 'SET_STATUS', payload: 'Font loading, please wait' });
       return; 
     }
@@ -115,17 +171,15 @@ function App() {
     dispatch({ type: 'SET_LOADING_WITH_STATUS', payload: { loading: true, status: 'Parsing GPX...' } });
     
     try {
-      let data = terrainData;
-      if (!data) {
+      if (!terrainData) {
         const text = await file.text();
-        const pts = GPXParser.parse(text, 10);
+        const points = GPXParser.parse(text, 10);
         
         dispatch({ type: 'SET_LOADING_WITH_STATUS', payload: { loading: true, status: 'Getting terrain data...' } });
-        data = await TerrainGenerator.generate(pts, gridRes, paddingFac);
+        const data = await TerrainGenerator.generate(points, modelConfig.gridRes, modelConfig.paddingFac);
         dispatch({ type: 'SET_TERRAIN_DATA', payload: data });
       }
       
-      // No need to build model here - PreviewPage will handle it
       dispatch({ type: 'SET_STATUS', payload: '' });
     } catch (err: unknown) {
       dispatch({ 
@@ -135,13 +189,13 @@ function App() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, [file, font, modelConfig.embossText, modelConfig.gridRes, modelConfig.paddingFac, terrainData]);
 
-  const handleReset = () => {
-    dispatch({ type: 'SET_TERRAIN_DATA', payload: null });
-  };
+  const handleReset = useCallback(() => {
+    dispatch({ type: 'RESET_TERRAIN' });
+  }, []);
 
-  const handleSetLoading = (isLoading: boolean, message?: string) => {
+  const handleSetLoading = useCallback((isLoading: boolean, message?: string) => {
     if (message) {
       dispatch({ 
         type: 'SET_LOADING_WITH_STATUS', 
@@ -153,20 +207,25 @@ function App() {
         dispatch({ type: 'SET_STATUS', payload: '' });
       }
     }
-  };
+  }, []);
+
+  const updateModelConfig = useCallback((updates: Partial<AppState['modelConfig']>) => {
+    dispatch({ type: 'UPDATE_MODEL_CONFIG', payload: updates });
+  }, []);
 
   return (
     <>
       <LoadingModal message={status || (loading ? 'Loading...' : null)} />
+      
       {terrainData ? (
         <PreviewPage
           terrainData={terrainData}
           font={font}
-          embossText={embossText}
-          initialShape={shape}
-          initialWidthMM={widthMM}
-          initialAltMult={altMult}
-          initialRotationAngle={rotationAngle}
+          embossText={modelConfig.embossText}
+          initialShape={modelConfig.shape}
+          initialWidthMM={modelConfig.widthMM}
+          initialAltMult={modelConfig.altMult}
+          initialRotationAngle={modelConfig.rotationAngle}
           loading={loading}
           setLoading={handleSetLoading}
           onReset={handleReset}
@@ -174,18 +233,18 @@ function App() {
       ) : (
         <HomePage
           onFileChange={(file) => dispatch({ type: 'SET_FILE', payload: file })}
-          shape={shape}
-          onShapeChange={(shape) => dispatch({ type: 'SET_SHAPE', payload: shape })}
-          widthMM={widthMM}
-          onWidthChange={(v) => dispatch({ type: 'SET_WIDTH_MM', payload: v })}
-          altMult={altMult}
-          onAltMultChange={(v) => dispatch({ type: 'SET_ALT_MULT', payload: v })}
-          gridRes={gridRes}
-          onGridResChange={(v) => dispatch({ type: 'SET_GRID_RES', payload: v })}
-          paddingFac={paddingFac}
-          onPaddingFacChange={(v) => dispatch({ type: 'SET_PADDING_FAC', payload: v })}
-          embossText={embossText}
-          onEmbossTextChange={(text) => dispatch({ type: 'SET_EMBOSS_TEXT', payload: text })}
+          shape={modelConfig.shape}
+          onShapeChange={(shape) => updateModelConfig({ shape })}
+          widthMM={modelConfig.widthMM}
+          onWidthChange={(widthMM) => updateModelConfig({ widthMM })}
+          altMult={modelConfig.altMult}
+          onAltMultChange={(altMult) => updateModelConfig({ altMult })}
+          gridRes={modelConfig.gridRes}
+          onGridResChange={(gridRes) => updateModelConfig({ gridRes })}
+          paddingFac={modelConfig.paddingFac}
+          onPaddingFacChange={(paddingFac) => updateModelConfig({ paddingFac })}
+          embossText={modelConfig.embossText}
+          onEmbossTextChange={(embossText) => updateModelConfig({ embossText })}
           loading={loading}
           onGenerate={handleGenerate}
         />
