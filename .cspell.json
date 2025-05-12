@@ -10,6 +10,7 @@
     "jsonify",
     "linspace",
     "numpy",
+    "Pokhara",
     "pydantic",
     "rasterio"
   ]
