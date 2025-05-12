@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Renderer from '../../lib/Renderer';
 import { ShapeType } from '../../lib/types';
-import { CompactFormControls } from '../../components/FormControls';
 import type { Object3D } from 'three';
 import './PreviewPage.css';
 
@@ -43,6 +42,7 @@ export default function PreviewPage({
   const [activeControl, setActiveControl] = useState<string | null>(null);
   const [pendingShapeChange, setPendingShapeChange] = useState<boolean>(false);
   const [isAltitudeChanging, setIsAltitudeChanging] = useState<boolean>(false);
+  const [isWidthChanging, setIsWidthChanging] = useState<boolean>(false);
 
   useEffect(() => {
     document.body.classList.add('model-mode');
@@ -102,6 +102,21 @@ export default function PreviewPage({
     onRegenerate(); // Regenerate the model with the new altitude multiplier
   };
 
+  // Handle width changes
+  const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(e.target.value, 10);
+    onWidthChange(newValue);
+  };
+  
+  const handleWidthStart = () => {
+    setIsWidthChanging(true);
+  };
+  
+  const handleWidthEnd = () => {
+    setIsWidthChanging(false);
+    onRegenerate(); // Regenerate the model with the new width
+  };
+
   // Toggle active control panel
   const toggleControl = (controlName: string) => {
     if (activeControl === controlName) {
@@ -147,39 +162,70 @@ export default function PreviewPage({
         <span className="tooltip">Back to home</span>
       </div>
       
+      {/* Action button for download */}
+      <div className="action-button-container">
+        <button
+          onClick={onDownload}
+          className="action-button"
+          title="Download STL model"
+          disabled={loading}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </button>
+      </div>
+      
+      {/* Update button (only shown if there are pending changes) */}
+      {loading && (
+        <div className="update-indicator">
+          <div className="spinner"></div>
+          <span>Updating...</span>
+        </div>
+      )}
+      
       {/* Toolbar */}
       <div className="toolbar">
-        {/* Rotation control */}
-        <div className={`toolbar-control ${activeControl === 'rotation' ? 'active' : ''}`}>
+        {/* Width control */}
+        <div className={`toolbar-control ${activeControl === 'width' ? 'active' : ''}`}>
           <button
-            className={`toolbar-button ${isRotating ? 'is-rotating' : ''}`}
-            onClick={() => toggleControl('rotation')}
-            title="Rotate terrain"
+            className={`toolbar-button ${isWidthChanging ? 'is-scaling' : ''}`}
+            onClick={() => toggleControl('width')}
+            title="Adjust model width"
             disabled={loading}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3" y2="18"></line>
+              <line x1="21" y1="6" x2="21" y2="18"></line>
             </svg>
           </button>
           
-          {activeControl === 'rotation' && (
-            <div className="toolbar-panel rotation-panel">
-              <div className="slider-container">
-                <input
-                  type="range"
-                  min="-180"
-                  max="180"
-                  value={rotationAngle}
-                  onChange={handleRotationChange}
-                  onMouseDown={handleRotationStart}
-                  onMouseUp={handleRotationEnd}
-                  onTouchStart={handleRotationStart}
-                  onTouchEnd={handleRotationEnd}
-                  className="rotation-slider"
-                  aria-label="Rotate terrain"
-                  disabled={loading}
-                />
-                <span className="rotation-value">{rotationAngle}°</span>
+          {activeControl === 'width' && (
+            <div className="toolbar-panel width-panel">
+              <div className="slider-container width-slider-container">
+                <label className="width-label">Model Width (mm)</label>
+                <div className="width-slider-wrapper">
+                  <input
+                    type="range"
+                    min="50"
+                    max="500"
+                    step="10"
+                    value={widthMM}
+                    onChange={handleWidthChange}
+                    onMouseDown={handleWidthStart}
+                    onMouseUp={handleWidthEnd}
+                    onTouchStart={handleWidthStart}
+                    onTouchEnd={handleWidthEnd}
+                    className="width-slider"
+                    aria-label="Adjust model width"
+                    disabled={loading}
+                  />
+                  <span className="width-value">{widthMM}</span>
+                </div>
               </div>
             </div>
           )}
@@ -275,29 +321,41 @@ export default function PreviewPage({
             </div>
           )}
         </div>
-      </div>
-      
-      <div className="absolute bottom-4 left-4 z-10 flex flex-col space-y-2 bg-white bg-opacity-80 p-3 rounded-lg shadow-lg">
-        <div className="text-xs text-gray-500 mb-1">Model Width</div>
-        <CompactFormControls
-          widthMM={widthMM}
-          onWidthChange={onWidthChange}
-        />
         
-        <div className="flex space-x-2">
+        {/* Rotation control */}
+        <div className={`toolbar-control ${activeControl === 'rotation' ? 'active' : ''}`}>
           <button
-            onClick={onRegenerate}
+            className={`toolbar-button ${isRotating ? 'is-rotating' : ''}`}
+            onClick={() => toggleControl('rotation')}
+            title="Rotate terrain"
             disabled={loading}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 rounded disabled:opacity-50"
           >
-            {loading ? 'Updating...' : 'Update'}
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
           </button>
-          <button
-            onClick={onDownload}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm py-1 rounded"
-          >
-            Download
-          </button>
+          
+          {activeControl === 'rotation' && (
+            <div className="toolbar-panel rotation-panel">
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="-180"
+                  max="180"
+                  value={rotationAngle}
+                  onChange={handleRotationChange}
+                  onMouseDown={handleRotationStart}
+                  onMouseUp={handleRotationEnd}
+                  onTouchStart={handleRotationStart}
+                  onTouchEnd={handleRotationEnd}
+                  className="rotation-slider"
+                  aria-label="Rotate terrain"
+                  disabled={loading}
+                />
+                <span className="rotation-value">{rotationAngle}°</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
