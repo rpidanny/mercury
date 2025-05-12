@@ -1,11 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import GPXParser from "./GPXParser";
+import { LatLon } from "./types";
 
 describe("GPXParser", () => {
   const sampleGPX = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Mercury App">
   <trk>
-    <name>Sample Track</name>
+    <n>Sample Track</n>
     <trkseg>
       <trkpt lat="37.7749" lon="-122.4194">
         <ele>10</ele>
@@ -25,16 +26,17 @@ describe("GPXParser", () => {
 
   // Mock the implementation of GPXParser.parse to return expected format
   const originalParse = GPXParser.parse;
+
   beforeEach(() => {
     GPXParser.parse = vi.fn((gpxString, subsampleFactor = 1) => {
       if (gpxString.includes("<invalid>")) {
         throw new Error("Failed to parse GPX file. Check format.");
       }
 
-      const points = [
-        { lat: 37.7749, lng: -122.4194, alt: 10 },
-        { lat: 37.775, lng: -122.4195, alt: 15 },
-        { lat: 37.7751, lng: -122.4196, alt: 20 },
+      const points: LatLon[] = [
+        { lat: 37.7749, lon: -122.4194 },
+        { lat: 37.775, lon: -122.4195 },
+        { lat: 37.7751, lon: -122.4196 },
       ];
 
       if (subsampleFactor > 1) {
@@ -55,18 +57,15 @@ describe("GPXParser", () => {
     expect(points).toHaveLength(3);
     expect(points[0]).toEqual({
       lat: 37.7749,
-      lng: -122.4194,
-      alt: 10,
+      lon: -122.4194,
     });
     expect(points[1]).toEqual({
       lat: 37.775,
-      lng: -122.4195,
-      alt: 15,
+      lon: -122.4195,
     });
     expect(points[2]).toEqual({
       lat: 37.7751,
-      lng: -122.4196,
-      alt: 20,
+      lon: -122.4196,
     });
   });
 
@@ -77,13 +76,11 @@ describe("GPXParser", () => {
     expect(points).toHaveLength(2);
     expect(points[0]).toEqual({
       lat: 37.7749,
-      lng: -122.4194,
-      alt: 10,
+      lon: -122.4194,
     });
     expect(points[1]).toEqual({
       lat: 37.7751,
-      lng: -122.4196,
-      alt: 20,
+      lon: -122.4196,
     });
   });
 
@@ -94,7 +91,7 @@ describe("GPXParser", () => {
     const emptyGPX = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Mercury App">
   <trk>
-    <name>Empty Track</name>
+    <n>Empty Track</n>
     <trkseg>
     </trkseg>
   </trk>

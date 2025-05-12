@@ -26,7 +26,12 @@ export interface LookupPoint {
   longitude: number;
 }
 
-export type ShapeType = "hexagon" | "square" | "circle";
+export type ShapeType =
+  | "hexagon"
+  | "square"
+  | "circle"
+  | "rectangle"
+  | "triangle";
 
 export interface TerrainGridPoint extends GridPoint {
   elevation: number | null;

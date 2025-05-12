@@ -54,7 +54,7 @@ vi.mock('three/examples/jsm/loaders/FontLoader.js', () => {
   
   return {
     FontLoader: class MockFontLoader {
-      load(url: string, onLoad: (font: typeof mockFont) => void): typeof mockFont {
+      load(_url: string, onLoad: (font: typeof mockFont) => void): typeof mockFont {
         // Immediately call onLoad with mock font
         setTimeout(() => onLoad(mockFont), 0);
         return mockFont;
@@ -140,8 +140,8 @@ import App from './App';
 
 describe('App', () => {
   // Mocks for browser APIs
-  global.URL.createObjectURL = vi.fn(() => 'mock-blob-url');
-  global.URL.revokeObjectURL = vi.fn();
+  globalThis.URL.createObjectURL = vi.fn(() => 'mock-blob-url');
+  globalThis.URL.revokeObjectURL = vi.fn();
   
   const mockCreateElement = document.createElement.bind(document);
   document.createElement = vi.fn((tagName) => {

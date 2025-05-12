@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { ShapeType } from '../../lib/types';
 import { FullFormControls } from '../../components/FormControls';
 import './HomePage.css';

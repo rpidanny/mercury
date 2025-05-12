@@ -1,0 +1,37 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8848:8848"
+    volumes:
+      - ./backend:/app
+      - ./data:/data
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.app:app
+      - ALOS_DSM_PATH=/data/geo_AW3D30.vrt
+    command: ["flask", "run", "--host=0.0.0.0", "--port=8848", "--debug"]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_API_URL=http://localhost:8848
+      - ROLLUP_SKIP_NODE_RESOLVE=true
+    command: sh -c "npm install && npm run dev"
+    restart: unless-stopped 
