@@ -4,6 +4,13 @@ import { ShapeType } from '../../lib/types';
 import type { Object3D } from 'three';
 import './PreviewPage.css';
 
+// Declare global Window property
+declare global {
+  interface Window {
+    widthChangeTimeout?: ReturnType<typeof setTimeout>;
+  }
+}
+
 interface PreviewPageProps {
   mesh: Object3D;
   onDownload: () => void;
@@ -43,6 +50,7 @@ export default function PreviewPage({
   const [pendingShapeChange, setPendingShapeChange] = useState<boolean>(false);
   const [isAltitudeChanging, setIsAltitudeChanging] = useState<boolean>(false);
   const [isWidthChanging, setIsWidthChanging] = useState<boolean>(false);
+  const regenerateRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     document.body.classList.add('model-mode');
@@ -102,19 +110,31 @@ export default function PreviewPage({
     onRegenerate(); // Regenerate the model with the new altitude multiplier
   };
 
-  // Handle width changes
-  const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseInt(e.target.value, 10);
-    onWidthChange(newValue);
+  // Better handling for width changes
+  const handleWidthChange = (newValue: number) => {
+    onWidthChange(newValue);  
+
+    // Start the changing state if not already
+    if (!isWidthChanging) {
+      setIsWidthChanging(true);
+    }
+    
+    // Clear any existing timeout to avoid multiple regenerations
+    if (window.widthChangeTimeout) {
+      clearTimeout(window.widthChangeTimeout);
+    }
+    
+    // Set a new timeout for regeneration
+    window.widthChangeTimeout = setTimeout(() => {
+      setIsWidthChanging(false);
+      // Use the latest regenerate function to avoid stale widthMM values
+      regenerateRef.current();
+    }, 300);
   };
   
+  // We only need the start handler now
   const handleWidthStart = () => {
     setIsWidthChanging(true);
-  };
-  
-  const handleWidthEnd = () => {
-    setIsWidthChanging(false);
-    onRegenerate(); // Regenerate the model with the new width
   };
 
   // Toggle active control panel
@@ -143,6 +163,11 @@ export default function PreviewPage({
   const isShapeActive = (currentShape: ShapeType) => {
     return shape === currentShape ? 'active' : '';
   };
+
+  // Keep the ref updated on every render
+  useEffect(() => {
+    regenerateRef.current = onRegenerate;
+  }, [onRegenerate]);
 
   return (
     <>
@@ -193,38 +218,77 @@ export default function PreviewPage({
           <button
             className={`toolbar-button ${isWidthChanging ? 'is-scaling' : ''}`}
             onClick={() => toggleControl('width')}
-            title="Adjust model width"
+            title="Adjust model size"
             disabled={loading}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-              <line x1="3" y1="6" x2="3" y2="18"></line>
-              <line x1="21" y1="6" x2="21" y2="18"></line>
+              <rect x="3" y="3" width="18" height="18"></rect>
+              <path d="M3 9h18"></path>
+              <path d="M3 15h18"></path>
+              <path d="M9 3v18"></path>
+              <path d="M15 3v18"></path>
             </svg>
           </button>
           
           {activeControl === 'width' && (
             <div className="toolbar-panel width-panel">
-              <div className="slider-container width-slider-container">
-                <label className="width-label">Model Width (mm)</label>
+              <div className="width-control-container">
+                <label className="width-label">Model Size</label>
+                
+                <div className="size-presets">
+                  <button 
+                    className={`size-preset-button ${widthMM <= 100 ? 'active' : ''}`}
+                    onClick={() => handleWidthChange(100)}
+                    disabled={loading || widthMM === 100}
+                    title="Small (100mm)"
+                    type="button"
+                  >
+                    <div className="size-icon small"></div>
+                    <span>Small</span>
+                  </button>
+                  
+                  <button 
+                    className={`size-preset-button ${widthMM > 100 && widthMM <= 250 ? 'active' : ''}`}
+                    onClick={() => handleWidthChange(250)}
+                    disabled={loading || widthMM === 250}
+                    title="Medium (250mm)"
+                    type="button"
+                  >
+                    <div className="size-icon medium"></div>
+                    <span>Medium</span>
+                  </button>
+                  
+                  <button 
+                    className={`size-preset-button ${widthMM > 250 ? 'active' : ''}`}
+                    onClick={() => handleWidthChange(500)}
+                    disabled={loading || widthMM === 500}
+                    title="Large (500mm)"
+                    type="button"
+                  >
+                    <div className="size-icon large"></div>
+                    <span>Large</span>
+                  </button>
+                </div>
+                
                 <div className="width-slider-wrapper">
+                  <span className="width-range-label">Fine adjustment:</span>
                   <input
                     type="range"
                     min="50"
                     max="500"
                     step="10"
                     value={widthMM}
-                    onChange={handleWidthChange}
+                    onChange={(e) => handleWidthChange(parseInt(e.target.value, 10))}
                     onMouseDown={handleWidthStart}
-                    onMouseUp={handleWidthEnd}
-                    onTouchStart={handleWidthStart}
-                    onTouchEnd={handleWidthEnd}
                     className="width-slider"
                     aria-label="Adjust model width"
                     disabled={loading}
                   />
-                  <span className="width-value">{widthMM}</span>
+                  <span className="width-value">{widthMM}mm</span>
+                </div>
+                
+                <div className="size-description">
+                  Width of the final 3D print.
                 </div>
               </div>
             </div>
