@@ -33,7 +33,9 @@ describe('PreviewPage', () => {
     onAltMultChange: vi.fn(),
     onRegenerate: vi.fn(),
     loading: false,
-    onReset: vi.fn()
+    onReset: vi.fn(),
+    rotationAngle: 0,
+    onRotationChange: vi.fn(),
   };
 
   beforeEach(() => {
@@ -70,55 +72,74 @@ describe('PreviewPage', () => {
 
   it('handles shape change', () => {
     render(<PreviewPage {...defaultProps} />);
-    
-    const shapeSelect = screen.getByRole('combobox');
-    fireEvent.change(shapeSelect, { target: { value: 'circle' } });
-    
+    // Open the shape selection panel
+    const shapeToolbarBtn = screen.getByTitle('Change shape');
+    fireEvent.click(shapeToolbarBtn);
+
+    // Select the circle shape button (accessible name is the title attr)
+    const circleBtn = screen.getByRole('button', { name: 'Circle shape' });
+    fireEvent.click(circleBtn);
+
     expect(defaultProps.onShapeChange).toHaveBeenCalledWith('circle');
   });
 
   it('handles width change', () => {
     render(<PreviewPage {...defaultProps} />);
-    
-    const inputs = screen.getAllByRole('spinbutton');
-    const widthInput = inputs[0];
-    fireEvent.change(widthInput, { target: { value: '150' } });
-    
+
+    // Open the width control panel
+    const widthToolbarBtn = screen.getByTitle('Adjust model size');
+    fireEvent.click(widthToolbarBtn);
+
+    // Find the width slider (range input)
+    const widthSlider = screen.getByRole('slider', { name: 'Adjust model width' });
+    fireEvent.change(widthSlider, { target: { value: '150' } });
+
     expect(defaultProps.onWidthChange).toHaveBeenCalledWith(150);
   });
 
   it('handles altitude multiplier change', () => {
     render(<PreviewPage {...defaultProps} />);
-    
-    const inputs = screen.getAllByRole('spinbutton');
-    const altitudeInput = inputs[1];
-    fireEvent.change(altitudeInput, { target: { value: '2.0' } });
-    
+
+    // Open the altitude control panel
+    const altToolbarBtn = screen.getByTitle('Adjust altitude');
+    fireEvent.click(altToolbarBtn);
+
+    // Find altitude slider (range input)
+    const altSlider = screen.getByRole('slider', { name: 'Adjust altitude multiplier' });
+    fireEvent.change(altSlider, { target: { value: '2.0' } });
+
     expect(defaultProps.onAltMultChange).toHaveBeenCalledWith(2.0);
   });
 
-  it('triggers model regeneration on update button click', () => {
+  it('triggers model regeneration after width change debounce', () => {
+    vi.useFakeTimers();
     render(<PreviewPage {...defaultProps} />);
-    
-    const updateButton = screen.getByText('Update');
-    fireEvent.click(updateButton);
-    
+
+    // Open width panel and change value
+    const widthToolbarBtn = screen.getByTitle('Adjust model size');
+    fireEvent.click(widthToolbarBtn);
+    const widthSlider = screen.getByRole('slider', { name: 'Adjust model width' });
+    fireEvent.change(widthSlider, { target: { value: '200' } });
+
+    // Fast-forward debounce timer (300 ms)
+    vi.advanceTimersByTime(300);
+
     expect(defaultProps.onRegenerate).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 
   it('displays "Updating..." when loading', () => {
     render(<PreviewPage {...defaultProps} loading={true} />);
     
     expect(screen.getByText('Updating...')).toBeInTheDocument();
-    expect(screen.getByText('Updating...')).toBeDisabled();
   });
 
   it('triggers download on download button click', () => {
     render(<PreviewPage {...defaultProps} />);
-    
-    const downloadButton = screen.getByText('Download');
+
+    const downloadButton = screen.getByRole('button', { name: 'Download STL model' });
     fireEvent.click(downloadButton);
-    
+
     expect(defaultProps.onDownload).toHaveBeenCalledTimes(1);
   });
 
