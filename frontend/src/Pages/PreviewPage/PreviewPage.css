@@ -40,7 +40,7 @@
 
 .home-button:hover+.tooltip {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(-50%);
 }
 
 .home-button svg {
@@ -48,20 +48,31 @@
   width: 1.25rem;
 }
 
+/* Toolbar control wrapper */
+.toolbar-control-wrapper {
+  position: relative;
+}
+
+/* Tooltip styles */
 .tooltip {
   position: absolute;
   left: calc(100% + 10px);
   top: 50%;
   transform: translateY(-50%) translateX(-10px);
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(33, 33, 33, 0.85);
   color: white;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  z-index: 100;
 }
 
 .tooltip::before {
@@ -72,7 +83,50 @@
   transform: translateY(-50%);
   border-style: solid;
   border-width: 5px 5px 5px 0;
-  border-color: transparent rgba(0, 0, 0, 0.75) transparent transparent;
+  border-color: transparent rgba(33, 33, 33, 0.85) transparent transparent;
+}
+
+.home-button:hover+.tooltip {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.action-button:hover+.tooltip {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.toolbar-control-wrapper:hover>.tooltip {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+/* Action button tooltip positioning */
+.action-button-container .tooltip {
+  left: auto;
+  right: calc(100% + 10px);
+  top: 50%;
+}
+
+.action-button-container .tooltip::before {
+  left: auto;
+  right: -5px;
+  border-width: 5px 0 5px 5px;
+  border-color: transparent transparent transparent rgba(33, 33, 33, 0.85);
+}
+
+/* Toolbar tooltip positioning */
+.toolbar-control-wrapper .tooltip {
+  left: auto;
+  right: calc(100% + 10px);
+  top: 50%;
+}
+
+.toolbar-control-wrapper .tooltip::before {
+  left: auto;
+  right: -5px;
+  border-width: 5px 0 5px 5px;
+  border-color: transparent transparent transparent rgba(33, 33, 33, 0.85);
 }
 
 @media (max-width: 640px) {

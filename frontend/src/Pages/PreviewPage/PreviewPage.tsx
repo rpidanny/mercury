@@ -130,175 +130,188 @@ export default function PreviewPage() {
         >
           <DownloadIcon />
         </button>
+        <span className="tooltip">Download 3D model</span>
       </div>
       
       <div className="toolbar">
         {/* Width control */}
-        <ToolbarControl
-          name="width"
-          activeControl={activeControl}
-          toggleControl={toggleControl}
-          isChanging={isWidthChanging}
-          title="Adjust model size"
-          disabled={loading}
-          icon={<WidthIcon />}
-        >
-          <div className="width-control-container">
-            <label className="width-label">Model Size</label>
-            
-            <div className="size-presets">
-              <button 
-                className={`size-preset-button ${widthMM <= 100 ? 'active' : ''}`}
-                onClick={() => handleWidthChange(100)}
-                disabled={loading || widthMM === 100}
-                title="Small (100mm)"
-                type="button"
-              >
-                <div className="size-icon small"></div>
-                <span>Small</span>
-              </button>
+        <div className="toolbar-control-wrapper">
+          <ToolbarControl
+            name="width"
+            activeControl={activeControl}
+            toggleControl={toggleControl}
+            isChanging={isWidthChanging}
+            title="Adjust model size"
+            disabled={loading}
+            icon={<WidthIcon />}
+          >
+            <div className="width-control-container">
+              <label className="width-label">Model Size</label>
               
-              <button 
-                className={`size-preset-button ${widthMM > 100 && widthMM <= 250 ? 'active' : ''}`}
-                onClick={() => handleWidthChange(250)}
-                disabled={loading || widthMM === 250}
-                title="Medium (250mm)"
-                type="button"
-              >
-                <div className="size-icon medium"></div>
-                <span>Medium</span>
-              </button>
+              <div className="size-presets">
+                <button 
+                  className={`size-preset-button ${widthMM <= 100 ? 'active' : ''}`}
+                  onClick={() => handleWidthChange(100)}
+                  disabled={loading || widthMM === 100}
+                  title="Small (100mm)"
+                  type="button"
+                >
+                  <div className="size-icon small"></div>
+                  <span>Small</span>
+                </button>
+                
+                <button 
+                  className={`size-preset-button ${widthMM > 100 && widthMM <= 250 ? 'active' : ''}`}
+                  onClick={() => handleWidthChange(250)}
+                  disabled={loading || widthMM === 250}
+                  title="Medium (250mm)"
+                  type="button"
+                >
+                  <div className="size-icon medium"></div>
+                  <span>Medium</span>
+                </button>
+                
+                <button 
+                  className={`size-preset-button ${widthMM > 250 ? 'active' : ''}`}
+                  onClick={() => handleWidthChange(500)}
+                  disabled={loading || widthMM === 500}
+                  title="Large (500mm)"
+                  type="button"
+                >
+                  <div className="size-icon large"></div>
+                  <span>Large</span>
+                </button>
+              </div>
               
-              <button 
-                className={`size-preset-button ${widthMM > 250 ? 'active' : ''}`}
-                onClick={() => handleWidthChange(500)}
-                disabled={loading || widthMM === 500}
-                title="Large (500mm)"
-                type="button"
-              >
-                <div className="size-icon large"></div>
-                <span>Large</span>
-              </button>
+              <div className="width-slider-wrapper">
+                <span className="width-range-label">Fine adjustment:</span>
+                <input
+                  type="range"
+                  min="50"
+                  max="500"
+                  step="10"
+                  value={widthMM}
+                  onChange={(e) => handleWidthChange(parseInt(e.target.value, 10))}
+                  className="width-slider"
+                  aria-label="Adjust model width"
+                  disabled={loading}
+                />
+                <span className="width-value">{widthMM}mm</span>
+              </div>
+              
+              <div className="size-description">
+                Width of the final 3D print.
+              </div>
             </div>
-            
-            <div className="width-slider-wrapper">
-              <span className="width-range-label">Fine adjustment:</span>
-              <input
-                type="range"
-                min="50"
-                max="500"
-                step="10"
-                value={widthMM}
-                onChange={(e) => handleWidthChange(parseInt(e.target.value, 10))}
-                className="width-slider"
-                aria-label="Adjust model width"
-                disabled={loading}
-              />
-              <span className="width-value">{widthMM}mm</span>
-            </div>
-            
-            <div className="size-description">
-              Width of the final 3D print.
-            </div>
-          </div>
-        </ToolbarControl>
+          </ToolbarControl>
+          <span className="tooltip">Adjust model size</span>
+        </div>
         
         {/* Shape selector control */}
-        <ToolbarControl
-          name="shape"
-          activeControl={activeControl}
-          toggleControl={toggleControl}
-          title="Change shape"
-          disabled={loading}
-          icon={<ShapeIcon />}
-        >
-          <button 
-            className={`shape-button ${isShapeActive('hexagon')}`} 
-            onClick={() => handleShapeChange('hexagon')}
-            title="Hexagon shape"
+        <div className="toolbar-control-wrapper">
+          <ToolbarControl
+            name="shape"
+            activeControl={activeControl}
+            toggleControl={toggleControl}
+            title="Change shape"
             disabled={loading}
+            icon={<ShapeIcon />}
           >
-            <HexagonIcon />
-          </button>
-          <button 
-            className={`shape-button ${isShapeActive('square')}`} 
-            onClick={() => handleShapeChange('square')}
-            title="Square shape"
-            disabled={loading}
-          >
-            <SquareIcon />
-          </button>
-          <button 
-            className={`shape-button ${isShapeActive('circle')}`} 
-            onClick={() => handleShapeChange('circle')}
-            title="Circle shape"
-            disabled={loading}
-          >
-            <CircleIcon />
-          </button>
-        </ToolbarControl>
+            <button 
+              className={`shape-button ${isShapeActive('hexagon')}`} 
+              onClick={() => handleShapeChange('hexagon')}
+              title="Hexagon shape"
+              disabled={loading}
+            >
+              <HexagonIcon />
+            </button>
+            <button 
+              className={`shape-button ${isShapeActive('square')}`} 
+              onClick={() => handleShapeChange('square')}
+              title="Square shape"
+              disabled={loading}
+            >
+              <SquareIcon />
+            </button>
+            <button 
+              className={`shape-button ${isShapeActive('circle')}`} 
+              onClick={() => handleShapeChange('circle')}
+              title="Circle shape"
+              disabled={loading}
+            >
+              <CircleIcon />
+            </button>
+          </ToolbarControl>
+          <span className="tooltip">Change model shape</span>
+        </div>
         
         {/* Altitude multiplier control */}
-        <ToolbarControl
-          name="altitude"
-          activeControl={activeControl}
-          toggleControl={toggleControl}
-          isChanging={isAltitudeChanging}
-          title="Adjust altitude"
-          disabled={loading}
-          icon={<AltitudeIcon />}
-        >
-          <div className="slider-container altitude-slider-container">
-            <label className="altitude-label">Altitude Multiplier</label>
-            <div className="altitude-slider-wrapper">
-              <input
-                type="range"
-                min="0.5"
-                max="10"
-                step="0.1"
-                value={altMult}
-                onChange={handleAltitudeChange}
-                onMouseDown={handleAltitudeStart}
-                onMouseUp={handleAltitudeEnd}
-                onTouchStart={handleAltitudeStart}
-                onTouchEnd={handleAltitudeEnd}
-                className="altitude-slider"
-                aria-label="Adjust altitude multiplier"
-                disabled={loading}
-              />
-              <span className="altitude-value">{altMult.toFixed(1)}×</span>
+        <div className="toolbar-control-wrapper">
+          <ToolbarControl
+            name="altitude"
+            activeControl={activeControl}
+            toggleControl={toggleControl}
+            isChanging={isAltitudeChanging}
+            title="Adjust altitude"
+            disabled={loading}
+            icon={<AltitudeIcon />}
+          >
+            <div className="slider-container altitude-slider-container">
+              <label className="altitude-label">Altitude Multiplier</label>
+              <div className="altitude-slider-wrapper">
+                <input
+                  type="range"
+                  min="0.5"
+                  max="10"
+                  step="0.1"
+                  value={altMult}
+                  onChange={handleAltitudeChange}
+                  onMouseDown={handleAltitudeStart}
+                  onMouseUp={handleAltitudeEnd}
+                  onTouchStart={handleAltitudeStart}
+                  onTouchEnd={handleAltitudeEnd}
+                  className="altitude-slider"
+                  aria-label="Adjust altitude multiplier"
+                  disabled={loading}
+                />
+                <span className="altitude-value">{altMult.toFixed(1)}×</span>
+              </div>
             </div>
-          </div>
-        </ToolbarControl>
+          </ToolbarControl>
+          <span className="tooltip">Adjust terrain height</span>
+        </div>
         
         {/* Rotation control */}
-        <ToolbarControl
-          name="rotation"
-          activeControl={activeControl}
-          toggleControl={toggleControl}
-          isChanging={isRotating}
-          title="Rotate terrain"
-          disabled={loading}
-          icon={<RotationIcon />}
-        >
-          <div className="slider-container">
-            <input
-              type="range"
-              min="-180"
-              max="180"
-              value={rotationAngle}
-              onChange={handleRotationChange}
-              onMouseDown={handleRotationStart}
-              onMouseUp={handleRotationEnd}
-              onTouchStart={handleRotationStart}
-              onTouchEnd={handleRotationEnd}
-              className="rotation-slider"
-              aria-label="Rotate terrain"
-              disabled={loading}
-            />
-            <span className="rotation-value">{rotationAngle}°</span>
-          </div>
-        </ToolbarControl>
+        <div className="toolbar-control-wrapper">
+          <ToolbarControl
+            name="rotation"
+            activeControl={activeControl}
+            toggleControl={toggleControl}
+            isChanging={isRotating}
+            title="Rotate terrain"
+            disabled={loading}
+            icon={<RotationIcon />}
+          >
+            <div className="slider-container">
+              <input
+                type="range"
+                min="-180"
+                max="180"
+                value={rotationAngle}
+                onChange={handleRotationChange}
+                onMouseDown={handleRotationStart}
+                onMouseUp={handleRotationEnd}
+                onTouchStart={handleRotationStart}
+                onTouchEnd={handleRotationEnd}
+                className="rotation-slider"
+                aria-label="Rotate terrain"
+                disabled={loading}
+              />
+              <span className="rotation-value">{rotationAngle}°</span>
+            </div>
+          </ToolbarControl>
+          <span className="tooltip">Rotate terrain model</span>
+        </div>
       </div>
     </>
   );
