@@ -42,6 +42,7 @@ export default function PreviewPage({
   const isInitialRender = useRef<boolean>(true);
   const [activeControl, setActiveControl] = useState<string | null>(null);
   const [pendingShapeChange, setPendingShapeChange] = useState<boolean>(false);
+  const [isAltitudeChanging, setIsAltitudeChanging] = useState<boolean>(false);
 
   useEffect(() => {
     document.body.classList.add('model-mode');
@@ -84,6 +85,21 @@ export default function PreviewPage({
   const handleRotationEnd = () => {
     setIsRotating(false);
     onRegenerate(); // Regenerate the model with the new rotation angle
+  };
+
+  // Handle altitude multiplier changes
+  const handleAltitudeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseFloat(e.target.value);
+    onAltMultChange(newValue);
+  };
+  
+  const handleAltitudeStart = () => {
+    setIsAltitudeChanging(true);
+  };
+  
+  const handleAltitudeEnd = () => {
+    setIsAltitudeChanging(false);
+    onRegenerate(); // Regenerate the model with the new altitude multiplier
   };
 
   // Toggle active control panel
@@ -219,14 +235,53 @@ export default function PreviewPage({
             </div>
           )}
         </div>
+        
+        {/* Altitude multiplier control */}
+        <div className={`toolbar-control ${activeControl === 'altitude' ? 'active' : ''}`}>
+          <button
+            className={`toolbar-button ${isAltitudeChanging ? 'is-elevating' : ''}`}
+            onClick={() => toggleControl('altitude')}
+            title="Adjust altitude"
+            disabled={loading}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 22l10-10 10 10M16 6l-4-4-4 4M12 2v8"></path>
+            </svg>
+          </button>
+          
+          {activeControl === 'altitude' && (
+            <div className="toolbar-panel altitude-panel">
+              <div className="slider-container altitude-slider-container">
+                <label className="altitude-label">Altitude Multiplier</label>
+                <div className="altitude-slider-wrapper">
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="10"
+                    step="0.1"
+                    value={altMult}
+                    onChange={handleAltitudeChange}
+                    onMouseDown={handleAltitudeStart}
+                    onMouseUp={handleAltitudeEnd}
+                    onTouchStart={handleAltitudeStart}
+                    onTouchEnd={handleAltitudeEnd}
+                    className="altitude-slider"
+                    aria-label="Adjust altitude multiplier"
+                    disabled={loading}
+                  />
+                  <span className="altitude-value">{altMult.toFixed(1)}×</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="absolute bottom-4 left-4 z-10 flex flex-col space-y-2 bg-white bg-opacity-80 p-3 rounded-lg shadow-lg">
+        <div className="text-xs text-gray-500 mb-1">Model Width</div>
         <CompactFormControls
           widthMM={widthMM}
           onWidthChange={onWidthChange}
-          altMult={altMult}
-          onAltMultChange={onAltMultChange}
         />
         
         <div className="flex space-x-2">

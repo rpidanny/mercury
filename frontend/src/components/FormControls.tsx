@@ -9,12 +9,15 @@ interface FormControlsProps {
   onAltMultChange: (v: number) => void;
 }
 
+interface CompactWidthControlProps {
+  widthMM: number;
+  onWidthChange: (v: number) => void;
+}
+
 export function CompactFormControls({
   widthMM,
   onWidthChange,
-  altMult,
-  onAltMultChange,
-}: Omit<FormControlsProps, 'shape' | 'onShapeChange'>) {
+}: CompactWidthControlProps) {
   return (
     <>
       <div className="flex items-center space-x-2">
@@ -24,17 +27,6 @@ export function CompactFormControls({
           value={widthMM}
           onChange={e => onWidthChange(+e.target.value)}
           min={10}
-          className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
-        />
-      </div>
-      <div className="flex items-center space-x-2">
-        <label className="font-medium text-sm text-gray-700">Altitude:</label>
-        <input
-          type="number"
-          value={altMult}
-          onChange={e => onAltMultChange(+e.target.value)}
-          min={0.1}
-          step={0.1}
           className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
         />
       </div>
