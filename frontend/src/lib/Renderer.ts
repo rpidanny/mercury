@@ -19,6 +19,8 @@ export interface RendererOptions {
   ambientLightIntensity?: number;
   directionalLightIntensity?: number;
   hemisphereLightIntensity?: number;
+  useGradientBackground?: boolean;
+  useShadows?: boolean;
 }
 
 /**
@@ -32,12 +34,15 @@ export default class Renderer {
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
   private currentMesh: THREE.Object3D | null = null;
+  private groundPlane: THREE.Mesh | null = null;
   private options: RendererOptions = {
     enableContrast: false,
     backgroundColor: 0xeeeeee,
     ambientLightIntensity: 0.8,
     directionalLightIntensity: 1.5,
     hemisphereLightIntensity: 0.6,
+    useGradientBackground: true,
+    useShadows: true,
   };
 
   // Light references for adjustment
@@ -69,7 +74,62 @@ export default class Renderer {
    * Initialize the Three.js scene
    */
   private initScene(): void {
-    this.scene.background = new THREE.Color(this.options.backgroundColor);
+    if (this.options.useGradientBackground) {
+      // Create gradient background
+      const vertexShader = `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `;
+
+      const fragmentShader = `
+        varying vec2 vUv;
+        uniform vec3 colorTop;
+        uniform vec3 colorBottom;
+        
+        void main() {
+          gl_FragColor = vec4(mix(colorBottom, colorTop, vUv.y), 1.0);
+        }
+      `;
+
+      const topColor = new THREE.Color(0x303030);
+      const bottomColor = new THREE.Color(0x101010);
+
+      const uniforms = {
+        colorTop: { value: topColor },
+        colorBottom: { value: bottomColor },
+      };
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        depthWrite: false,
+      });
+
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+      const gradientScene = new THREE.Scene();
+      const gradientCamera = new THREE.Camera();
+
+      gradientScene.add(mesh);
+
+      this.scene.background = null;
+
+      // Override the render method to include the gradient background
+      const originalRender = this.renderer?.render.bind(this.renderer);
+      if (originalRender && this.renderer) {
+        this.renderer.autoClear = false;
+        this.renderer.render = (scene, camera) => {
+          this.renderer.clear();
+          originalRender(gradientScene, gradientCamera);
+          originalRender(scene, camera);
+        };
+      }
+    } else {
+      this.scene.background = new THREE.Color(this.options.backgroundColor);
+    }
   }
 
   /**
@@ -101,6 +161,22 @@ export default class Renderer {
     );
     this.directionalLight.position.set(-0.25, 1, 1).normalize();
 
+    // Setup shadows
+    if (this.options.useShadows) {
+      this.directionalLight.castShadow = true;
+      this.directionalLight.shadow.mapSize.width = 2048;
+      this.directionalLight.shadow.mapSize.height = 2048;
+      this.directionalLight.shadow.camera.near = 0.5;
+      this.directionalLight.shadow.camera.far = 500;
+      this.directionalLight.shadow.bias = -0.0001;
+
+      const size = 100;
+      this.directionalLight.shadow.camera.left = -size;
+      this.directionalLight.shadow.camera.right = size;
+      this.directionalLight.shadow.camera.top = size;
+      this.directionalLight.shadow.camera.bottom = -size;
+    }
+
     // Hemisphere light - subtle gradient light
     this.hemisphereLight = new THREE.HemisphereLight(
       0xffffff,
@@ -126,8 +202,14 @@ export default class Renderer {
     });
     this.renderer.setSize(width, height, true);
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    if (this.options.useShadows) {
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.0;
+    }
 
     this.container.innerHTML = "";
     this.container.appendChild(this.renderer.domElement);
@@ -143,6 +225,8 @@ export default class Renderer {
     this.controls.enablePan = true;
     this.controls.enableZoom = true;
     this.controls.enableRotate = true;
+    this.controls.minDistance = 10;
+    this.controls.maxDistance = 1000;
   }
 
   /**
@@ -232,7 +316,9 @@ export default class Renderer {
    */
   private clearSceneObjects(): void {
     this.scene.children
-      .filter((obj) => !(obj instanceof THREE.Light))
+      .filter(
+        (obj) => !(obj instanceof THREE.Light) && obj !== this.groundPlane
+      )
       .forEach((obj) => this.scene.remove(obj));
   }
 
@@ -240,6 +326,16 @@ export default class Renderer {
    * Add an object to the scene and set as current mesh
    */
   private addObjectToScene(object: THREE.Object3D): void {
+    // Enable shadows on all meshes
+    if (this.options.useShadows) {
+      object.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+    }
+
     this.scene.add(object);
     this.currentMesh = object;
   }
@@ -315,6 +411,28 @@ export default class Renderer {
     this.camera.updateProjectionMatrix();
     this.controls.target.copy(center);
     this.controls.update();
+
+    // Update ground plane position to be just below the object
+    if (this.groundPlane && this.options.useGroundPlane) {
+      this.groundPlane.position.x = center.x;
+      this.groundPlane.position.y = center.y;
+      this.groundPlane.position.z = box.min.z - 0.1; // Just below the model
+    }
+  }
+
+  /**
+   * Toggle ground plane visibility
+   */
+  public toggleGroundPlane(visible: boolean): void {
+    this.options.useGroundPlane = visible;
+
+    if (visible && !this.groundPlane) {
+      this.createGroundPlane();
+    } else if (this.groundPlane) {
+      this.groundPlane.visible = visible;
+    }
+
+    this.render();
   }
 
   /**
