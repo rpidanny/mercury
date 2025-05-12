@@ -38,6 +38,7 @@ type AppAction =
   | { type: 'SET_EMBOSS_TEXT', payload: string }
   | { type: 'SET_STATUS', payload: string }
   | { type: 'SET_LOADING', payload: boolean }
+  | { type: 'SET_LOADING_WITH_STATUS', payload: { loading: boolean, status: string } }
   | { type: 'SET_FONT', payload: Font | null }
   | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
   | { type: 'SET_ROTATION_ANGLE', payload: number };
@@ -70,6 +71,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_EMBOSS_TEXT': return { ...state, embossText: action.payload };
     case 'SET_STATUS': return { ...state, status: action.payload };
     case 'SET_LOADING': return { ...state, loading: action.payload };
+    case 'SET_LOADING_WITH_STATUS': 
+      return { 
+        ...state, 
+        loading: action.payload.loading, 
+        status: action.payload.status 
+      };
     case 'SET_FONT': return { ...state, font: action.payload };
     case 'SET_TERRAIN_DATA': return { ...state, terrainData: action.payload };
     case 'SET_ROTATION_ANGLE': return { ...state, rotationAngle: action.payload };
@@ -105,16 +112,15 @@ function App() {
       return; 
     }
     
-    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_LOADING_WITH_STATUS', payload: { loading: true, status: 'Parsing GPX...' } });
     
     try {
       let data = terrainData;
       if (!data) {
-        dispatch({ type: 'SET_STATUS', payload: 'Parsing GPX...' });
         const text = await file.text();
         const pts = GPXParser.parse(text, 10);
         
-        dispatch({ type: 'SET_STATUS', payload: 'Generating terrain...' });
+        dispatch({ type: 'SET_LOADING_WITH_STATUS', payload: { loading: true, status: 'Getting terrain data...' } });
         data = await TerrainGenerator.generate(pts, gridRes, paddingFac);
         dispatch({ type: 'SET_TERRAIN_DATA', payload: data });
       }
@@ -135,12 +141,18 @@ function App() {
     dispatch({ type: 'SET_TERRAIN_DATA', payload: null });
   };
 
-  const setLoading = (isLoading: boolean) => {
-    dispatch({ type: 'SET_LOADING', payload: isLoading });
-  };
-
-  const setStatus = (statusText: string) => {
-    dispatch({ type: 'SET_STATUS', payload: statusText });
+  const handleSetLoading = (isLoading: boolean, message?: string) => {
+    if (message) {
+      dispatch({ 
+        type: 'SET_LOADING_WITH_STATUS', 
+        payload: { loading: isLoading, status: message } 
+      });
+    } else {
+      dispatch({ type: 'SET_LOADING', payload: isLoading });
+      if (!isLoading) {
+        dispatch({ type: 'SET_STATUS', payload: '' });
+      }
+    }
   };
 
   return (
@@ -156,9 +168,7 @@ function App() {
           initialAltMult={altMult}
           initialRotationAngle={rotationAngle}
           loading={loading}
-          setLoading={setLoading}
-          setStatus={setStatus}
-          loadingStatus={status}
+          setLoading={handleSetLoading}
           onReset={handleReset}
         />
       ) : (

@@ -24,9 +24,7 @@ interface PreviewPageProps {
   initialAltMult: number;
   initialRotationAngle: number;
   loading: boolean;
-  setLoading: (loading: boolean) => void;
-  setStatus: (status: string) => void;
-  loadingStatus?: string;
+  setLoading: (isLoading: boolean, message?: string) => void;
   onReset: () => void;
 }
 
@@ -40,8 +38,6 @@ export default function PreviewPage({
   initialRotationAngle,
   loading,
   setLoading,
-  setStatus,
-  loadingStatus,
   onReset,
 }: PreviewPageProps) {
   // Local state for all toolbox values
@@ -85,8 +81,7 @@ export default function PreviewPage({
     
     const buildModel = async () => {
       // Set loading state immediately
-      setLoading(true);
-      setStatus('Building 3D model...');
+      setLoading(true, 'Building 3D model...');
       isBuildingModel.current = true;
       
       try {
@@ -117,10 +112,8 @@ export default function PreviewPage({
           rendererRef.current.renderMesh(result.mesh);
           initialRenderComplete.current = true;
         }
-        
-        setStatus('');
       } catch (err: unknown) {
-        setStatus(err instanceof Error ? err.message : String(err));
+        setLoading(true, err instanceof Error ? err.message : String(err));
       } finally {
         // Give the UI a moment to show the completed state before hiding loading
         setTimeout(() => {
@@ -134,7 +127,7 @@ export default function PreviewPage({
     if (!initialRenderComplete.current || pendingChanges) {
       buildModel();
     }
-  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, setStatus, setLoading, isRendererInitialized]);
+  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, setLoading, isRendererInitialized]);
   
   // Update renderer when mesh changes after initial render
   useEffect(() => {
@@ -273,14 +266,6 @@ export default function PreviewPage({
           </svg>
         </button>
       </div>
-      
-      {/* Update indicator */}
-      {loading && (
-        <div className="update-indicator">
-          <div className="spinner"></div>
-          <span>{loadingStatus || "Updating..."}</span>
-        </div>
-      )}
       
       {/* Toolbar */}
       <div className="toolbar">
