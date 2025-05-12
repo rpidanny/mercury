@@ -56,6 +56,9 @@ export default function LoadingModal({ message }: LoadingModalProps) {
             This is taking longer than expected...
           </p>
         )}
+        <div className="text-xs text-slate-500 mt-4 max-w-xs text-center">
+          Creating detailed 3D models can be resource-intensive. Larger files may take more time to process.
+        </div>
       </div>
     </div>
   );
