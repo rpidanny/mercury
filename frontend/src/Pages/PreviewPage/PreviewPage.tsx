@@ -80,8 +80,10 @@ export default function PreviewPage({
     if (isBuildingModel.current) return; // Prevent concurrent builds
     
     const buildModel = async () => {
-      // Set loading state immediately
-      setLoading(true, 'Building 3D model...');
+      if (!localMesh) {
+        setLoading(true, 'Building 3D model...');
+      }
+
       isBuildingModel.current = true;
       
       try {
@@ -136,6 +138,13 @@ export default function PreviewPage({
     }
   }, [localMesh]);
   
+  // Function to set pending changes and update loading state
+  const setModelChange = () => {
+    setPendingChanges(true);
+    // Show loading immediately to give feedback, will be cleared when model is built
+    setLoading(true, 'Updating model...');
+  };
+  
   // Handle download functionality
   const handleDownload = () => {
     if (!localMesh) return;
@@ -163,7 +172,7 @@ export default function PreviewPage({
   
   const handleRotationEnd = () => {
     setIsRotating(false);
-    setPendingChanges(true);
+    setModelChange();
   };
 
   // Handle altitude multiplier changes
@@ -178,7 +187,7 @@ export default function PreviewPage({
   
   const handleAltitudeEnd = () => {
     setIsAltitudeChanging(false);
-    setPendingChanges(true);
+    setModelChange();
   };
 
   // Handle width changes
@@ -198,7 +207,7 @@ export default function PreviewPage({
     // Set a new timeout for regeneration
     window.widthChangeTimeout = setTimeout(() => {
       setIsWidthChanging(false);
-      setPendingChanges(true);
+      setModelChange();
     }, 300);
   };
   
@@ -220,7 +229,7 @@ export default function PreviewPage({
     // Only process if the shape actually changed
     if (newShape !== shape) {
       setShape(newShape);
-      setPendingChanges(true);
+      setModelChange();
     }
     
     // Close the shape control after selection
