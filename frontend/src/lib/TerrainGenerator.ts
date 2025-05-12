@@ -33,8 +33,10 @@ export default class TerrainGenerator {
     );
     const { apiBounds, boundsGeo } = this.createBounds(rectExtents, xyToGeo);
 
-    const gridPoints = await this.fetchGridPoints(apiBounds, resolution);
-    const trackPointsData = await this.fetchTrackPoints(trackPoints);
+    const [gridPoints, trackPointsData] = await Promise.all([
+      this.fetchGridPoints(apiBounds, resolution),
+      this.fetchTrackPoints(trackPoints),
+    ]);
 
     return {
       geoToXY,

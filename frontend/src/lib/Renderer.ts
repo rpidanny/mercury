@@ -34,7 +34,6 @@ export default class Renderer {
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
   private currentMesh: THREE.Object3D | null = null;
-  private groundPlane: THREE.Mesh | null = null;
   private options: RendererOptions = {
     enableContrast: false,
     backgroundColor: 0xeeeeee,
@@ -316,9 +315,7 @@ export default class Renderer {
    */
   private clearSceneObjects(): void {
     this.scene.children
-      .filter(
-        (obj) => !(obj instanceof THREE.Light) && obj !== this.groundPlane
-      )
+      .filter((obj) => !(obj instanceof THREE.Light))
       .forEach((obj) => this.scene.remove(obj));
   }
 
@@ -411,28 +408,6 @@ export default class Renderer {
     this.camera.updateProjectionMatrix();
     this.controls.target.copy(center);
     this.controls.update();
-
-    // Update ground plane position to be just below the object
-    if (this.groundPlane && this.options.useGroundPlane) {
-      this.groundPlane.position.x = center.x;
-      this.groundPlane.position.y = center.y;
-      this.groundPlane.position.z = box.min.z - 0.1; // Just below the model
-    }
-  }
-
-  /**
-   * Toggle ground plane visibility
-   */
-  public toggleGroundPlane(visible: boolean): void {
-    this.options.useGroundPlane = visible;
-
-    if (visible && !this.groundPlane) {
-      this.createGroundPlane();
-    } else if (this.groundPlane) {
-      this.groundPlane.visible = visible;
-    }
-
-    this.render();
   }
 
   /**
