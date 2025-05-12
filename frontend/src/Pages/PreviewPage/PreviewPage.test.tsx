@@ -32,7 +32,8 @@ describe('PreviewPage', () => {
     altMult: 1,
     onAltMultChange: vi.fn(),
     onRegenerate: vi.fn(),
-    loading: false
+    loading: false,
+    onReset: vi.fn()
   };
 
   beforeEach(() => {
@@ -49,6 +50,22 @@ describe('PreviewPage', () => {
     render(<PreviewPage {...defaultProps} />);
     
     expect(document.body.classList.contains('model-mode')).toBe(true);
+  });
+
+  it('renders the home button', () => {
+    render(<PreviewPage {...defaultProps} />);
+    
+    const homeButton = screen.getByLabelText('Back to home');
+    expect(homeButton).toBeInTheDocument();
+  });
+
+  it('calls onReset when home button is clicked', () => {
+    render(<PreviewPage {...defaultProps} />);
+    
+    const homeButton = screen.getByLabelText('Back to home');
+    fireEvent.click(homeButton);
+    
+    expect(defaultProps.onReset).toHaveBeenCalledTimes(1);
   });
 
   it('handles shape change', () => {
@@ -103,5 +120,18 @@ describe('PreviewPage', () => {
     fireEvent.click(downloadButton);
     
     expect(defaultProps.onDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes model-mode class from body on unmount', () => {
+    const { unmount } = render(<PreviewPage {...defaultProps} />);
+    
+    // Check that class is added
+    expect(document.body.classList.contains('model-mode')).toBe(true);
+    
+    // Unmount component
+    unmount();
+    
+    // Check that class is removed
+    expect(document.body.classList.contains('model-mode')).toBe(false);
   });
 }); 
