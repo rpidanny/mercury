@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import Renderer from '../../lib/Renderer';
 import { ShapeType } from '../../lib/types';
 import type { Object3D } from 'three';
+import type { Font } from 'three/examples/jsm/loaders/FontLoader.js';
+import type { TerrainData } from '../../lib/TerrainGenerator';
+import ModelBuilder from '../../lib/ModelBuilder';
+import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import './PreviewPage.css';
 
 // Declare global Window property
@@ -12,78 +16,152 @@ declare global {
 }
 
 interface PreviewPageProps {
-  mesh: Object3D;
-  onDownload: () => void;
-  shape: ShapeType;
-  onShapeChange: (shape: ShapeType) => void;
-  widthMM: number;
-  onWidthChange: (v: number) => void;
-  altMult: number;
-  onAltMultChange: (v: number) => void;
-  onRegenerate: () => void;
+  terrainData: TerrainData;
+  font: Font | null;
+  embossText: string;
+  initialShape: ShapeType;
+  initialWidthMM: number;
+  initialAltMult: number;
+  initialRotationAngle: number;
   loading: boolean;
+  setLoading: (loading: boolean) => void;
+  setStatus: (status: string) => void;
+  loadingStatus?: string;
   onReset: () => void;
-  rotationAngle: number;
-  onRotationChange: (angle: number) => void;
 }
 
 export default function PreviewPage({
-  mesh,
-  onDownload,
-  shape,
-  onShapeChange,
-  widthMM,
-  onWidthChange,
-  altMult,
-  onAltMultChange,
-  onRegenerate,
+  terrainData,
+  font,
+  embossText,
+  initialShape,
+  initialWidthMM,
+  initialAltMult,
+  initialRotationAngle,
   loading,
+  setLoading,
+  setStatus,
+  loadingStatus,
   onReset,
-  rotationAngle,
-  onRotationChange,
 }: PreviewPageProps) {
+  // Local state for all toolbox values
+  const [shape, setShape] = useState<ShapeType>(initialShape);
+  const [widthMM, setWidthMM] = useState<number>(initialWidthMM);
+  const [altMult, setAltMult] = useState<number>(initialAltMult);
+  const [rotationAngle, setRotationAngle] = useState<number>(initialRotationAngle);
+  const [localMesh, setLocalMesh] = useState<Object3D | null>(null);
+
+  // UI state
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
-  const [isRotating, setIsRotating] = useState<boolean>(false);
-  const isInitialRender = useRef<boolean>(true);
+  const [isRendererInitialized, setIsRendererInitialized] = useState<boolean>(false);
   const [activeControl, setActiveControl] = useState<string | null>(null);
-  const [pendingShapeChange, setPendingShapeChange] = useState<boolean>(false);
+  const [isRotating, setIsRotating] = useState<boolean>(false);
   const [isAltitudeChanging, setIsAltitudeChanging] = useState<boolean>(false);
   const [isWidthChanging, setIsWidthChanging] = useState<boolean>(false);
-  const regenerateRef = useRef<() => void>(() => {});
-
+  const [pendingChanges, setPendingChanges] = useState<boolean>(false);
+  const initialRenderComplete = useRef<boolean>(false);
+  const isBuildingModel = useRef<boolean>(false);
+  
+  // Initialize renderer on mount
   useEffect(() => {
     document.body.classList.add('model-mode');
     
-    // Only create a new renderer on the first render
-    if (containerRef.current && isInitialRender.current) {
+    if (containerRef.current && !rendererRef.current) {
       const renderer = new Renderer('#scene-container');
       rendererRef.current = renderer;
-      renderer.renderMesh(mesh);
-      isInitialRender.current = false;
-    } 
-    // On subsequent renders, update the mesh while preserving camera position
-    else if (rendererRef.current) {
-      rendererRef.current.updateMeshPreserveCamera(mesh);
+      setIsRendererInitialized(true);
     }
     
     return () => {
       document.body.classList.remove('model-mode');
     };
-  }, [mesh]);
-
-  // Trigger regeneration when shape changes
+  }, []);
+  
+  // Build model when needed or when params change
   useEffect(() => {
-    if (pendingShapeChange) {
-      onRegenerate();
-      setPendingShapeChange(false);
+    if (!terrainData || !isRendererInitialized) return;
+    if (isBuildingModel.current) return; // Prevent concurrent builds
+    
+    const buildModel = async () => {
+      // Set loading state immediately
+      setLoading(true);
+      setStatus('Building 3D model...');
+      isBuildingModel.current = true;
+      
+      try {
+        // Ensure the loading state has time to be applied to the UI
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Wrap model building in a Promise to make it asynchronous
+        const result = await new Promise<{ mesh: Object3D }>((resolve) => {
+          // Use requestAnimationFrame to ensure we're not blocking the UI thread
+          requestAnimationFrame(() => {
+            const modelResult = ModelBuilder.build(
+              terrainData,
+              widthMM,
+              altMult,
+              shape,
+              embossText,
+              font,
+              rotationAngle
+            );
+            resolve(modelResult);
+          });
+        });
+        
+        setLocalMesh(result.mesh);
+        
+        // Directly render the mesh for the first time to ensure it's displayed
+        if (!initialRenderComplete.current && rendererRef.current) {
+          rendererRef.current.renderMesh(result.mesh);
+          initialRenderComplete.current = true;
+        }
+        
+        setStatus('');
+      } catch (err: unknown) {
+        setStatus(err instanceof Error ? err.message : String(err));
+      } finally {
+        // Give the UI a moment to show the completed state before hiding loading
+        setTimeout(() => {
+          setLoading(false);
+          setPendingChanges(false);
+          isBuildingModel.current = false;
+        }, 300);
+      }
+    };
+    
+    if (!initialRenderComplete.current || pendingChanges) {
+      buildModel();
     }
-  }, [pendingShapeChange, onRegenerate, shape]);
+  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, setStatus, setLoading, isRendererInitialized]);
+  
+  // Update renderer when mesh changes after initial render
+  useEffect(() => {
+    if (rendererRef.current && localMesh && initialRenderComplete.current) {
+      rendererRef.current.updateMeshPreserveCamera(localMesh);
+    }
+  }, [localMesh]);
+  
+  // Handle download functionality
+  const handleDownload = () => {
+    if (!localMesh) return;
+    
+    const exporter = new STLExporter();
+    const stlString = exporter.parse(localMesh);
+    const blob = new Blob([stlString], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'model.stl';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Handle rotation changes
   const handleRotationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value, 10);
-    onRotationChange(newValue);
+    setRotationAngle(newValue);
   };
   
   const handleRotationStart = () => {
@@ -92,13 +170,13 @@ export default function PreviewPage({
   
   const handleRotationEnd = () => {
     setIsRotating(false);
-    onRegenerate(); // Regenerate the model with the new rotation angle
+    setPendingChanges(true);
   };
 
   // Handle altitude multiplier changes
   const handleAltitudeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseFloat(e.target.value);
-    onAltMultChange(newValue);
+    setAltMult(newValue);
   };
   
   const handleAltitudeStart = () => {
@@ -107,12 +185,12 @@ export default function PreviewPage({
   
   const handleAltitudeEnd = () => {
     setIsAltitudeChanging(false);
-    onRegenerate(); // Regenerate the model with the new altitude multiplier
+    setPendingChanges(true);
   };
 
-  // Better handling for width changes
+  // Handle width changes
   const handleWidthChange = (newValue: number) => {
-    onWidthChange(newValue);  
+    setWidthMM(newValue);  
 
     // Start the changing state if not already
     if (!isWidthChanging) {
@@ -127,12 +205,10 @@ export default function PreviewPage({
     // Set a new timeout for regeneration
     window.widthChangeTimeout = setTimeout(() => {
       setIsWidthChanging(false);
-      // Use the latest regenerate function to avoid stale widthMM values
-      regenerateRef.current();
+      setPendingChanges(true);
     }, 300);
   };
   
-  // We only need the start handler now
   const handleWidthStart = () => {
     setIsWidthChanging(true);
   };
@@ -150,8 +226,8 @@ export default function PreviewPage({
   const handleShapeChange = (newShape: ShapeType) => {
     // Only process if the shape actually changed
     if (newShape !== shape) {
-      onShapeChange(newShape);
-      setPendingShapeChange(true);
+      setShape(newShape);
+      setPendingChanges(true);
     }
     
     // Close the shape control after selection
@@ -163,11 +239,6 @@ export default function PreviewPage({
   const isShapeActive = (currentShape: ShapeType) => {
     return shape === currentShape ? 'active' : '';
   };
-
-  // Keep the ref updated on every render
-  useEffect(() => {
-    regenerateRef.current = onRegenerate;
-  }, [onRegenerate]);
 
   return (
     <>
@@ -190,10 +261,10 @@ export default function PreviewPage({
       {/* Action button for download */}
       <div className="action-button-container">
         <button
-          onClick={onDownload}
+          onClick={handleDownload}
           className="action-button"
           title="Download STL model"
-          disabled={loading}
+          disabled={loading || !localMesh}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -203,11 +274,11 @@ export default function PreviewPage({
         </button>
       </div>
       
-      {/* Update button (only shown if there are pending changes) */}
+      {/* Update indicator */}
       {loading && (
         <div className="update-indicator">
           <div className="spinner"></div>
-          <span>Updating...</span>
+          <span>{loadingStatus || "Updating..."}</span>
         </div>
       )}
       

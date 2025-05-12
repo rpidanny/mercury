@@ -3,13 +3,10 @@ import { useReducer, useEffect } from 'react';
 import GPXParser from './lib/GPXParser';
 import TerrainGenerator from './lib/TerrainGenerator';
 import type { TerrainData } from './lib/TerrainGenerator';
-import ModelBuilder from './lib/ModelBuilder';
 import Config from './lib/config';
 import { ShapeType } from './lib/types';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import type { Font } from 'three/examples/jsm/loaders/FontLoader.js';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
-import type { Object3D } from 'three';
 import './index.css';
 import HomePage from './Pages/HomePage/HomePage';
 import PreviewPage from './Pages/PreviewPage/PreviewPage';
@@ -27,7 +24,6 @@ type AppState = {
   status: string;
   loading: boolean;
   font: Font | null;
-  mesh: Object3D | null;
   terrainData: TerrainData | null;
   rotationAngle: number;
 };
@@ -43,7 +39,6 @@ type AppAction =
   | { type: 'SET_STATUS', payload: string }
   | { type: 'SET_LOADING', payload: boolean }
   | { type: 'SET_FONT', payload: Font | null }
-  | { type: 'SET_MESH', payload: Object3D | null }
   | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
   | { type: 'SET_ROTATION_ANGLE', payload: number };
 
@@ -59,7 +54,6 @@ const initialState: AppState = {
   status: '',
   loading: false,
   font: null,
-  mesh: null,
   terrainData: null,
   rotationAngle: 0
 };
@@ -77,7 +71,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_STATUS': return { ...state, status: action.payload };
     case 'SET_LOADING': return { ...state, loading: action.payload };
     case 'SET_FONT': return { ...state, font: action.payload };
-    case 'SET_MESH': return { ...state, mesh: action.payload };
     case 'SET_TERRAIN_DATA': return { ...state, terrainData: action.payload };
     case 'SET_ROTATION_ANGLE': return { ...state, rotationAngle: action.payload };
     default: return state;
@@ -88,7 +81,7 @@ function App() {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { 
     file, shape, widthMM, altMult, gridRes, paddingFac, 
-    embossText, status, loading, font, mesh, terrainData, rotationAngle 
+    embossText, status, loading, font, terrainData, rotationAngle 
   } = state;
 
   // Load font on mount
@@ -126,18 +119,7 @@ function App() {
         dispatch({ type: 'SET_TERRAIN_DATA', payload: data });
       }
       
-      dispatch({ type: 'SET_STATUS', payload: 'Building 3D model...' });
-      const result = ModelBuilder.build(
-        data!,
-        widthMM,
-        altMult,
-        shape,
-        embossText,
-        font,
-        rotationAngle
-      );
-      
-      dispatch({ type: 'SET_MESH', payload: result.mesh });
+      // No need to build model here - PreviewPage will handle it
       dispatch({ type: 'SET_STATUS', payload: '' });
     } catch (err: unknown) {
       dispatch({ 
@@ -147,83 +129,37 @@ function App() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
-
-  const handleUpdateModel = async () => {
-    if (!terrainData) {
-      dispatch({ type: 'SET_STATUS', payload: 'No terrain data available, please regenerate' });
-      return;
-    }
-    if (!font && embossText) {
-      dispatch({ type: 'SET_STATUS', payload: 'Font loading, please wait' });
-      return;
-    }
-    
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
-    try {
-      dispatch({ type: 'SET_STATUS', payload: 'Building 3D model...' });
-      const result = ModelBuilder.build(
-        terrainData,
-        widthMM,
-        altMult,
-        shape,
-        embossText,
-        font,
-        rotationAngle
-      );
-      dispatch({ type: 'SET_MESH', payload: result.mesh });
-      dispatch({ type: 'SET_STATUS', payload: '' });
-    } catch (err: unknown) {
-      dispatch({ 
-        type: 'SET_STATUS', 
-        payload: err instanceof Error ? err.message : String(err) 
-      });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-  
-  const handleRotationChange = (angle: number) => {
-    dispatch({ type: 'SET_ROTATION_ANGLE', payload: angle });
-  };
-
-  const handleDownload = () => {
-    if (!mesh) return;
-    const exporter = new STLExporter();
-    const stlString = exporter.parse(mesh);
-    const blob = new Blob([stlString], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'model.stl';
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleReset = () => {
-    dispatch({ type: 'SET_MESH', payload: null });
     dispatch({ type: 'SET_TERRAIN_DATA', payload: null });
+  };
+
+  const setLoading = (isLoading: boolean) => {
+    dispatch({ type: 'SET_LOADING', payload: isLoading });
+  };
+
+  const setStatus = (statusText: string) => {
+    dispatch({ type: 'SET_STATUS', payload: statusText });
   };
 
   return (
     <>
       <LoadingModal message={status || (loading ? 'Loading...' : null)} />
-      {mesh ? (
+      {terrainData ? (
         <PreviewPage
-          mesh={mesh}
-          onDownload={handleDownload}
-          shape={shape}
-          onShapeChange={(shape) => dispatch({ type: 'SET_SHAPE', payload: shape })}
-          widthMM={widthMM}
-          onWidthChange={(v) => dispatch({ type: 'SET_WIDTH_MM', payload: v })}
-          altMult={altMult}
-          onAltMultChange={(v) => dispatch({ type: 'SET_ALT_MULT', payload: v })}
-          onRegenerate={handleUpdateModel}
+          terrainData={terrainData}
+          font={font}
+          embossText={embossText}
+          initialShape={shape}
+          initialWidthMM={widthMM}
+          initialAltMult={altMult}
+          initialRotationAngle={rotationAngle}
           loading={loading}
+          setLoading={setLoading}
+          setStatus={setStatus}
+          loadingStatus={status}
           onReset={handleReset}
-          rotationAngle={rotationAngle}
-          onRotationChange={handleRotationChange}
         />
       ) : (
         <HomePage
