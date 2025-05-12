@@ -11,6 +11,7 @@ export default class Renderer {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
+  private currentMesh: THREE.Object3D | null = null;
 
   constructor(containerSelector: string) {
     const container = document.querySelector(containerSelector) as HTMLElement;
@@ -84,6 +85,7 @@ export default class Renderer {
 
     // Add new mesh
     this.scene.add(object);
+    this.currentMesh = object;
 
     // Apply contrasting materials and fit camera to mesh
     // object.traverse((child) => {

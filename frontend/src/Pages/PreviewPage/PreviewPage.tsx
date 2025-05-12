@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Renderer from '../../lib/Renderer';
 import { ShapeType } from '../../lib/types';
 import { CompactFormControls } from '../../components/FormControls';
@@ -17,6 +17,8 @@ interface PreviewPageProps {
   onRegenerate: () => void;
   loading: boolean;
   onReset: () => void;
+  rotationAngle: number;
+  onRotationChange: (angle: number) => void;
 }
 
 export default function PreviewPage({
@@ -31,19 +33,39 @@ export default function PreviewPage({
   onRegenerate,
   loading,
   onReset,
+  rotationAngle,
+  onRotationChange,
 }: PreviewPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<Renderer | null>(null);
+  const [isRotating, setIsRotating] = useState<boolean>(false);
 
   useEffect(() => {
     document.body.classList.add('model-mode');
     if (containerRef.current) {
       const renderer = new Renderer('#scene-container');
+      rendererRef.current = renderer;
       renderer.renderMesh(mesh);
     }
     return () => {
       document.body.classList.remove('model-mode');
     };
   }, [mesh]);
+
+  // Handle rotation changes
+  const handleRotationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(e.target.value, 10);
+    onRotationChange(newValue);
+  };
+  
+  const handleRotationStart = () => {
+    setIsRotating(true);
+  };
+  
+  const handleRotationEnd = () => {
+    setIsRotating(false);
+    onRegenerate(); // Regenerate the model with the new rotation angle
+  };
 
   return (
     <>
@@ -61,6 +83,31 @@ export default function PreviewPage({
           </svg>
         </button>
         <span className="tooltip">Back to home</span>
+      </div>
+      
+      <div className={`rotation-control ${isRotating ? 'is-rotating' : ''}`}>
+        <span className="rotation-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotation-icon">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          Rotate
+        </span>
+        <input
+          type="range"
+          min="-180"
+          max="180"
+          value={rotationAngle}
+          onChange={handleRotationChange}
+          onMouseDown={handleRotationStart}
+          onMouseUp={handleRotationEnd}
+          onTouchStart={handleRotationStart}
+          onTouchEnd={handleRotationEnd}
+          className="rotation-slider"
+          aria-label="Rotate terrain"
+          title="Rotate terrain to adjust clipping angle"
+        />
+        <span className="rotation-value">{rotationAngle}°</span>
+        <span className="rotation-tooltip">Rotate to adjust terrain clipping</span>
       </div>
       
       <div className="absolute bottom-4 left-4 z-10 flex flex-col space-y-2 bg-white bg-opacity-80 p-3 rounded-lg shadow-lg">

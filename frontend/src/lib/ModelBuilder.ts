@@ -33,7 +33,8 @@ export default class ModelBuilder {
     altitudeMultiplier: number,
     shapeType: ShapeType,
     embossText: string,
-    font: Font | null
+    font: Font | null,
+    rotationAngle: number = 0
   ): BuildResult {
     const builder = new ModelBuilder();
 
@@ -44,7 +45,8 @@ export default class ModelBuilder {
         altitudeMultiplier,
         shapeType,
         embossText,
-        font
+        font,
+        rotationAngle
       );
     } catch (error) {
       console.error("Error building model:", error);
@@ -62,6 +64,9 @@ export default class ModelBuilder {
   private scale = 1;
   private data: TerrainData | null = null;
   private altitudeMultiplier = 1;
+  private rotationAngle = 0;
+  private rotationMatrix = new THREE.Matrix4();
+  private rotationMatrixInverse = new THREE.Matrix4();
 
   private constructor() {}
 
@@ -71,12 +76,21 @@ export default class ModelBuilder {
     altitudeMultiplier: number,
     shapeType: ShapeType,
     embossText: string,
-    font: Font | null
+    font: Font | null,
+    rotationAngle: number = 0
   ): BuildResult {
     // Store parameters
     this.data = data;
     this.scale = modelWidthMM / data.widthGeo;
     this.altitudeMultiplier = altitudeMultiplier;
+    this.rotationAngle = rotationAngle;
+
+    // Create rotation matrices
+    if (rotationAngle !== 0) {
+      const angleInRadians = (rotationAngle * Math.PI) / 180;
+      this.rotationMatrix.makeRotationZ(angleInRadians);
+      this.rotationMatrixInverse.copy(this.rotationMatrix).invert();
+    }
 
     // 1. Create shape and prepare data
     this.shape = this.createShape(shapeType);
@@ -103,9 +117,40 @@ export default class ModelBuilder {
       hasText
     );
 
-    // 5. Group and return
+    // 5. Group meshes (no rotation applied here anymore)
     const group = this.groupMeshes(meshes);
+
     return { mesh: group, textOverlapWarning };
+  }
+
+  /**
+   * Rotates a 2D point {x,y} according to the current rotation angle
+   */
+  private rotatePoint(point: { x: number; y: number }): {
+    x: number;
+    y: number;
+  } {
+    if (this.rotationAngle === 0) return point;
+
+    const vec = new THREE.Vector3(point.x, point.y, 0);
+    vec.applyMatrix4(this.rotationMatrix);
+
+    return { x: vec.x, y: vec.y };
+  }
+
+  /**
+   * Rotates a 2D point {x,y} in the opposite direction of the current rotation angle
+   */
+  private unrotatePoint(point: { x: number; y: number }): {
+    x: number;
+    y: number;
+  } {
+    if (this.rotationAngle === 0) return point;
+
+    const vec = new THREE.Vector3(point.x, point.y, 0);
+    vec.applyMatrix4(this.rotationMatrixInverse);
+
+    return { x: vec.x, y: vec.y };
   }
 
   private preparePoints(): void {
@@ -146,10 +191,13 @@ export default class ModelBuilder {
     return this.data.gridPoints
       .filter((p: TerrainGridPoint) => {
         const { x, y } = this.data!.geoToXY(p.lat, p.lon);
-        return this.shape!.contains({ x, y });
+        // Unrotate the point to check if it falls within the unrotated shape
+        const unrotatedPoint = this.unrotatePoint({ x, y });
+        return this.shape!.contains(unrotatedPoint);
       })
       .map((p: TerrainGridPoint) => {
         const { x, y } = this.data!.geoToXY(p.lat, p.lon);
+        // Scale the points but don't rotate them yet
         return {
           x: x * this.scale,
           y: y * this.scale,
@@ -324,15 +372,14 @@ export default class ModelBuilder {
       geo = new THREE.ShapeGeometry(circle);
     } else {
       // For other shapes, use their vertices
-      const verts2D = this.shape
-        .getVertices()
-        .map(
-          (v) =>
-            new THREE.Vector2(
-              v.x * this.scale * Config.BASE_OVERLAP_FACTOR,
-              v.y * this.scale * Config.BASE_OVERLAP_FACTOR
-            )
+      const verts2D = this.shape.getVertices().map((v) => {
+        // Scale the vertices
+        const scaled = new THREE.Vector2(
+          v.x * this.scale * Config.BASE_OVERLAP_FACTOR,
+          v.y * this.scale * Config.BASE_OVERLAP_FACTOR
         );
+        return scaled;
+      });
       geo = new THREE.ShapeGeometry(new THREE.Shape(verts2D));
     }
 
