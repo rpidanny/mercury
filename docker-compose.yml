@@ -9,22 +9,16 @@ services:
       - ./backend:/app
       - ./data:/data  # Mount the directory containing geo_AW3D30.vrt
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=production
       - ALOS_DSM_PATH=/data/geo_AW3D30.vrt
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev # We will create this Dockerfile next
+      dockerfile: Dockerfile  # Using the production Dockerfile
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/index.html:/app/index.html
-    stdin_open: true # For react-scripts
-    tty: true # For react-scripts
+      - "80:80"  # Expose on port 80 instead of 5173
     depends_on:
       - backend
     environment:
-      - CHOKIDAR_USEPOLLING=true # For hot reloading in Docker 
+      - VITE_API_URL=http://localhost:8848

@@ -43,11 +43,22 @@ gdalbuildvrt data/geo_AW3D30.vrt data/netherlands_AW3D30.tif data/nepal_AW3D30.t
 ### Start the Application
 
 ```bash
-# Start both frontend and backend services
+# Start both frontend and backend services in production mode
 docker compose up
 ```
 
-Once running, access the application at [http://localhost:5173](http://localhost:5173).
+Once running, access the application at [http://localhost](http://localhost).
+
+### Development Mode
+
+For development with hot-reloading enabled:
+
+```bash
+# Start services in development mode
+docker compose -f docker-compose.dev.yml up
+```
+
+This will run both the frontend and backend services with full watch mode support, making development faster by automatically reloading changes. Access the development server at [http://localhost:5173](http://localhost:5173).
 
 ### Creating a 3D Model
 
