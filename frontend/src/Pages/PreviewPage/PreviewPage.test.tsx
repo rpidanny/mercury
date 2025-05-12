@@ -6,6 +6,7 @@ import TestWrapper from '../../test-utils/TestWrapper';
 import * as AppContext from '../../context/AppContext';
 import * as ModelBuilderHook from '../../hooks/useModelBuilder';
 import createMockTerrainData from '../../test-utils/mockTerrainData';
+import { ShapeType } from '../../lib/types';
 
 // Mock the entire component's hooks
 vi.mock('../../hooks/useModelBuilder', () => ({
@@ -33,7 +34,7 @@ describe('PreviewPage', () => {
     state: {
       ui: { loading: false, status: '' },
       modelConfig: { 
-        shape: 'hexagon', 
+        shape: 'hexagon' as ShapeType, 
         widthMM: 100, 
         altMult: 1,
         gridRes: 500,
@@ -59,7 +60,7 @@ describe('PreviewPage', () => {
     // Default AppContext mock
     vi.spyOn(AppContext, 'useAppContext').mockReturnValue(mockContext);
     // Reset the mocks on hooks
-    (ModelBuilderHook.useModelBuilder as any).mockClear();
+    (ModelBuilderHook.useModelBuilder as ReturnType<typeof vi.fn>).mockClear();
   });
   
   it('renders the scene container for 3D preview', () => {
@@ -95,7 +96,7 @@ describe('PreviewPage', () => {
     const updateModel = vi.fn();
     
     // Mock the hook return for this test
-    (ModelBuilderHook.useModelBuilder as any).mockReturnValue({
+    (ModelBuilderHook.useModelBuilder as ReturnType<typeof vi.fn>).mockReturnValue({
       localMesh: new Object3D(),
       updateModel,
       downloadModel: vi.fn()
@@ -138,7 +139,7 @@ describe('PreviewPage', () => {
       state: {
         ui: { loading: false, status: '' },
         modelConfig: { 
-          shape: 'hexagon', 
+          shape: 'hexagon' as ShapeType, 
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
@@ -162,7 +163,7 @@ describe('PreviewPage', () => {
     vi.spyOn(window, 'clearTimeout').mockImplementation(() => undefined);
     vi.spyOn(window, 'setTimeout').mockImplementation((fn) => {
       if (typeof fn === 'function') fn();
-      return 0;
+      return 123; // Return a dummy timeout ID
     });
 
     render(<PreviewPage />);
@@ -188,7 +189,7 @@ describe('PreviewPage', () => {
       state: {
         ui: { loading: false, status: '' },
         modelConfig: { 
-          shape: 'hexagon', 
+          shape: 'hexagon' as ShapeType, 
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
@@ -236,7 +237,7 @@ describe('PreviewPage', () => {
     const downloadModel = vi.fn();
     
     // Mock the hook to return our own download function
-    (ModelBuilderHook.useModelBuilder as any).mockReturnValue({
+    (ModelBuilderHook.useModelBuilder as ReturnType<typeof vi.fn>).mockReturnValue({
       localMesh: new Object3D(),
       updateModel: vi.fn(),
       downloadModel
