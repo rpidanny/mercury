@@ -11,65 +11,270 @@ export interface CameraState {
 }
 
 /**
+ * Configuration options for the renderer
+ */
+export interface RendererOptions {
+  enableContrast?: boolean;
+  backgroundColor?: number;
+  ambientLightIntensity?: number;
+  directionalLightIntensity?: number;
+  hemisphereLightIntensity?: number;
+  useGradientBackground?: boolean;
+  useShadows?: boolean;
+}
+
+/**
  * Renderer encapsulates a Three.js scene, camera, and WebGLRenderer.
  * It renders the given mesh into the specified container.
  */
 export default class Renderer {
   private container: HTMLElement;
-  private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
-  private controls: OrbitControls;
+  private scene: THREE.Scene = new THREE.Scene();
+  private camera!: THREE.PerspectiveCamera;
+  private renderer!: THREE.WebGLRenderer;
+  private controls!: OrbitControls;
   private currentMesh: THREE.Object3D | null = null;
+  private groundPlane: THREE.Mesh | null = null;
+  private options: RendererOptions = {
+    enableContrast: false,
+    backgroundColor: 0xeeeeee,
+    ambientLightIntensity: 0.8,
+    directionalLightIntensity: 1.5,
+    hemisphereLightIntensity: 0.6,
+    useGradientBackground: true,
+    useShadows: true,
+  };
 
-  constructor(containerSelector: string) {
+  // Light references for adjustment
+  private ambientLight!: THREE.AmbientLight;
+  private directionalLight!: THREE.DirectionalLight;
+  private hemisphereLight!: THREE.HemisphereLight;
+
+  constructor(containerSelector: string, options?: Partial<RendererOptions>) {
     const container = document.querySelector(containerSelector) as HTMLElement;
     if (!container) {
       throw new Error(`Container not found: ${containerSelector}`);
     }
     this.container = container;
 
-    // Create scene
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xeeeeee);
+    if (options) {
+      this.options = { ...this.options, ...options };
+    }
 
-    // Create camera with wider field of view
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    this.initScene();
+    this.initCamera();
+    this.initLights();
+    this.initRenderer();
+    this.initControls();
+    this.setupEventListeners();
+    this.animate();
+  }
+
+  /**
+   * Initialize the Three.js scene
+   */
+  private initScene(): void {
+    if (this.options.useGradientBackground) {
+      // Create gradient background
+      const vertexShader = `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `;
+
+      const fragmentShader = `
+        varying vec2 vUv;
+        uniform vec3 colorTop;
+        uniform vec3 colorBottom;
+        
+        void main() {
+          gl_FragColor = vec4(mix(colorBottom, colorTop, vUv.y), 1.0);
+        }
+      `;
+
+      const topColor = new THREE.Color(0x303030);
+      const bottomColor = new THREE.Color(0x101010);
+
+      const uniforms = {
+        colorTop: { value: topColor },
+        colorBottom: { value: bottomColor },
+      };
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        depthWrite: false,
+      });
+
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+      const gradientScene = new THREE.Scene();
+      const gradientCamera = new THREE.Camera();
+
+      gradientScene.add(mesh);
+
+      this.scene.background = null;
+
+      // Override the render method to include the gradient background
+      const originalRender = this.renderer?.render.bind(this.renderer);
+      if (originalRender && this.renderer) {
+        this.renderer.autoClear = false;
+        this.renderer.render = (scene, camera) => {
+          this.renderer.clear();
+          originalRender(gradientScene, gradientCamera);
+          originalRender(scene, camera);
+        };
+      }
+    } else {
+      this.scene.background = new THREE.Color(this.options.backgroundColor);
+    }
+  }
+
+  /**
+   * Initialize the camera
+   */
+  private initCamera(): void {
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
     this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 100000);
     this.camera.position.set(0, -width, width * 0.5);
     this.camera.up.set(0, 0, 1);
     this.camera.lookAt(0, 0, 0);
+  }
 
-    // Add lights
-    const ambient = new THREE.AmbientLight(0xffffff, 1.0);
-    this.scene.add(ambient);
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
-    dir.position.set(0.5, -1, 1).normalize();
-    this.scene.add(dir);
-    // Add hemisphere light for better shading
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-    this.scene.add(hemi);
+  /**
+   * Initialize lighting for the scene
+   */
+  private initLights(): void {
+    // Ambient light - general illumination
+    this.ambientLight = new THREE.AmbientLight(
+      0xffffff,
+      this.options.ambientLightIntensity || 0.8
+    );
 
-    // Create WebGL renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Main directional light - simulates sunlight
+    this.directionalLight = new THREE.DirectionalLight(
+      0xffffff,
+      this.options.directionalLightIntensity || 1.5
+    );
+    this.directionalLight.position.set(-0.25, 1, 1).normalize();
+
+    // Setup shadows
+    if (this.options.useShadows) {
+      this.directionalLight.castShadow = true;
+      this.directionalLight.shadow.mapSize.width = 2048;
+      this.directionalLight.shadow.mapSize.height = 2048;
+      this.directionalLight.shadow.camera.near = 0.5;
+      this.directionalLight.shadow.camera.far = 500;
+      this.directionalLight.shadow.bias = -0.0001;
+
+      const size = 100;
+      this.directionalLight.shadow.camera.left = -size;
+      this.directionalLight.shadow.camera.right = size;
+      this.directionalLight.shadow.camera.top = size;
+      this.directionalLight.shadow.camera.bottom = -size;
+    }
+
+    // Hemisphere light - subtle gradient light
+    this.hemisphereLight = new THREE.HemisphereLight(
+      0xffffff,
+      0x444444,
+      this.options.hemisphereLightIntensity || 0.6
+    );
+
+    this.scene.add(this.ambientLight);
+    this.scene.add(this.directionalLight);
+    this.scene.add(this.hemisphereLight);
+  }
+
+  /**
+   * Initialize the WebGL renderer
+   */
+  private initRenderer(): void {
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
     this.renderer.setSize(width, height, true);
-    container.innerHTML = "";
-    container.appendChild(this.renderer.domElement);
+    this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Initialize orbit controls
+    if (this.options.useShadows) {
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.0;
+    }
+
+    this.container.innerHTML = "";
+    this.container.appendChild(this.renderer.domElement);
+  }
+
+  /**
+   * Initialize orbit controls
+   */
+  private initControls(): void {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
     this.controls.enablePan = true;
     this.controls.enableZoom = true;
     this.controls.enableRotate = true;
+    this.controls.minDistance = 10;
+    this.controls.maxDistance = 1000;
+  }
 
-    // Start animation loop
-    this.animate();
+  /**
+   * Adjust lighting settings
+   */
+  public adjustLighting(options: {
+    ambientIntensity?: number;
+    directionalIntensity?: number;
+    hemisphereIntensity?: number;
+  }): void {
+    if (options.ambientIntensity !== undefined) {
+      this.ambientLight.intensity = options.ambientIntensity;
+      this.options.ambientLightIntensity = options.ambientIntensity;
+    }
 
-    // Handle resize
+    if (options.directionalIntensity !== undefined) {
+      this.directionalLight.intensity = options.directionalIntensity;
+      this.options.directionalLightIntensity = options.directionalIntensity;
+    }
+
+    if (options.hemisphereIntensity !== undefined) {
+      this.hemisphereLight.intensity = options.hemisphereIntensity;
+      this.options.hemisphereLightIntensity = options.hemisphereIntensity;
+    }
+
+    this.render();
+  }
+
+  /**
+   * Set up event listeners
+   */
+  private setupEventListeners(): void {
     window.addEventListener("resize", this.onWindowResize.bind(this));
+  }
+
+  /**
+   * Handle window resize events
+   */
+  private onWindowResize(): void {
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height, true);
+    this.controls.update();
+
+    this.render();
   }
 
   /**
@@ -99,33 +304,72 @@ export default class Renderer {
    * Replace the mesh while preserving camera position
    */
   public updateMeshPreserveCamera(object: THREE.Object3D): void {
-    // Save camera state
     const cameraState = this.getCameraState();
-
-    // Remove all existing objects except lights
-    this.scene.children
-      .filter((obj) => !(obj instanceof THREE.Light))
-      .forEach((obj) => this.scene.remove(obj));
-
-    // Add new mesh
-    this.scene.add(object);
-    this.currentMesh = object;
-
-    // Restore camera state
+    this.clearSceneObjects();
+    this.addObjectToScene(object);
     this.setCameraState(cameraState);
-
-    // Render once
     this.render();
   }
 
-  private onWindowResize(): void {
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height, true);
-    this.controls.update();
-    this.render();
+  /**
+   * Remove all non-light objects from the scene
+   */
+  private clearSceneObjects(): void {
+    this.scene.children
+      .filter(
+        (obj) => !(obj instanceof THREE.Light) && obj !== this.groundPlane
+      )
+      .forEach((obj) => this.scene.remove(obj));
+  }
+
+  /**
+   * Add an object to the scene and set as current mesh
+   */
+  private addObjectToScene(object: THREE.Object3D): void {
+    // Enable shadows on all meshes
+    if (this.options.useShadows) {
+      object.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+    }
+
+    this.scene.add(object);
+    this.currentMesh = object;
+  }
+
+  /**
+   * Apply contrasting materials to make the mesh more visible
+   * This is disabled by default and can be enabled via options
+   */
+  private applyContrastingMaterials(object: THREE.Object3D): void {
+    if (!this.options.enableContrast) return;
+
+    object.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const meshChild = child as THREE.Mesh;
+        // add edge outlines for better visibility
+        const geometry = meshChild.geometry as THREE.BufferGeometry;
+        // only add edges if geometry has valid positions
+        if (
+          geometry.attributes.position &&
+          geometry.attributes.position.count > 0
+        ) {
+          const edgesGeometry = new THREE.EdgesGeometry(geometry);
+          const edgesMaterial = new THREE.LineBasicMaterial({
+            color: 0x444444,
+            linewidth: 1,
+          });
+          const edgesMesh = new THREE.LineSegments(
+            edgesGeometry,
+            edgesMaterial
+          );
+          meshChild.add(edgesMesh);
+        }
+      }
+    });
   }
 
   /**
@@ -133,44 +377,24 @@ export default class Renderer {
    * Clears previous meshes (preserving lights).
    */
   public renderMesh(object: THREE.Object3D): void {
-    // Remove all existing objects except lights
-    this.scene.children
-      .filter((obj) => !(obj instanceof THREE.Light))
-      .forEach((obj) => this.scene.remove(obj));
+    this.clearSceneObjects();
+    this.addObjectToScene(object);
 
-    // Add new mesh
-    this.scene.add(object);
-    this.currentMesh = object;
+    // Apply contrasting materials if enabled
+    this.applyContrastingMaterials(object);
 
-    // Apply contrasting materials and fit camera to mesh
-    // object.traverse((child) => {
-    //   if ((child as THREE.Mesh).isMesh) {
-    //     const meshChild = child as THREE.Mesh;
-    //     // add edge outlines for better visibility
-    //     const geometry = meshChild.geometry as THREE.BufferGeometry;
-    //     // only add edges if geometry has valid positions
-    //     if (
-    //       geometry.attributes.position &&
-    //       geometry.attributes.position.count > 0
-    //     ) {
-    //       const edgesGeometry = new THREE.EdgesGeometry(geometry);
-    //       const edgesMaterial = new THREE.LineBasicMaterial({
-    //         color: 0x444444,
-    //         linewidth: 1,
-    //       });
-    //       const edgesMesh = new THREE.LineSegments(
-    //         edgesGeometry,
-    //         edgesMaterial
-    //       );
-    //       meshChild.add(edgesMesh);
-    //     }
-    //   }
-    // });
+    this.fitCameraToObject(object);
+    this.render();
+  }
 
-    // Compute bounding box and fit camera
+  /**
+   * Adjust the camera to frame the object properly
+   */
+  private fitCameraToObject(object: THREE.Object3D): void {
     const box = new THREE.Box3().setFromObject(object);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
+
     const maxDim = Math.max(size.x, size.y, size.z);
     const fov = this.camera.fov * (Math.PI / 180);
     let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
@@ -181,20 +405,40 @@ export default class Renderer {
       .subVectors(this.camera.position, this.controls.target)
       .normalize();
     const newPos = center.clone().add(direction.multiplyScalar(cameraDistance));
+
     this.camera.position.copy(newPos);
     this.camera.lookAt(center);
     this.camera.updateProjectionMatrix();
     this.controls.target.copy(center);
     this.controls.update();
 
-    // Render once
+    // Update ground plane position to be just below the object
+    if (this.groundPlane && this.options.useGroundPlane) {
+      this.groundPlane.position.x = center.x;
+      this.groundPlane.position.y = center.y;
+      this.groundPlane.position.z = box.min.z - 0.1; // Just below the model
+    }
+  }
+
+  /**
+   * Toggle ground plane visibility
+   */
+  public toggleGroundPlane(visible: boolean): void {
+    this.options.useGroundPlane = visible;
+
+    if (visible && !this.groundPlane) {
+      this.createGroundPlane();
+    } else if (this.groundPlane) {
+      this.groundPlane.visible = visible;
+    }
+
     this.render();
   }
 
   /**
    * Renders the scene from the camera.
    */
-  render(): void {
+  public render(): void {
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -208,6 +452,18 @@ export default class Renderer {
   };
 
   /**
+   * Enable or disable contrasting materials
+   */
+  public setContrastMode(enable: boolean): void {
+    this.options.enableContrast = enable;
+
+    // Re-render the current mesh with the new contrast setting if one exists
+    if (this.currentMesh) {
+      this.renderMesh(this.currentMesh);
+    }
+  }
+
+  /**
    * Draws a boundary outline given an array of 2D points (in mm units).
    * Existing mesh is already rendered; call after renderMesh.
    */
@@ -216,16 +472,21 @@ export default class Renderer {
     height: number = 0
   ): void {
     if (points2D.length === 0) return;
+
     // Convert to 3D points
     const pts: THREE.Vector3[] = points2D.map(
       (p) => new THREE.Vector3(p.x, p.y, height)
     );
+
     // Close the loop
     pts.push(pts[0].clone());
+
     // Create line geometry
-    const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({ color: 0xff0000 });
-    const line = new THREE.LineLoop(geo, mat);
+    const geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+    const line = new THREE.LineLoop(geometry, material);
+
     this.scene.add(line);
+    this.render();
   }
 }
