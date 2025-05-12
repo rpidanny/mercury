@@ -100,8 +100,13 @@ export const useModelBuilder = () => {
   }, [setLoading]);
 
   // Handle download functionality
-  const downloadModel = useCallback(() => {
+  const downloadModel = useCallback(async () => {
     if (!localMesh) return;
+
+    setLoading(true, 'Compacting 3D model...');
+
+    // Add a small delay to ensure loading state is applied in the UI
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const exporter = new STLExporter();
     const stlString = exporter.parse(localMesh);
@@ -124,7 +129,11 @@ export const useModelBuilder = () => {
     
     a.click();
     URL.revokeObjectURL(url);
-  }, [localMesh, state.file, modelConfig]);
+
+    // Add delay before removing loading state
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setLoading(false);
+  }, [localMesh, state.file, modelConfig, setLoading]);
 
   return {
     localMesh,
