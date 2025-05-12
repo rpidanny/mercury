@@ -29,6 +29,7 @@ type AppState = {
   font: Font | null;
   mesh: Object3D | null;
   terrainData: TerrainData | null;
+  rotationAngle: number;
 };
 
 type AppAction = 
@@ -43,7 +44,8 @@ type AppAction =
   | { type: 'SET_LOADING', payload: boolean }
   | { type: 'SET_FONT', payload: Font | null }
   | { type: 'SET_MESH', payload: Object3D | null }
-  | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null };
+  | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
+  | { type: 'SET_ROTATION_ANGLE', payload: number };
 
 // Initial state
 const initialState: AppState = {
@@ -58,7 +60,8 @@ const initialState: AppState = {
   loading: false,
   font: null,
   mesh: null,
-  terrainData: null
+  terrainData: null,
+  rotationAngle: 0
 };
 
 // Reducer function
@@ -76,6 +79,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_FONT': return { ...state, font: action.payload };
     case 'SET_MESH': return { ...state, mesh: action.payload };
     case 'SET_TERRAIN_DATA': return { ...state, terrainData: action.payload };
+    case 'SET_ROTATION_ANGLE': return { ...state, rotationAngle: action.payload };
     default: return state;
   }
 }
@@ -84,7 +88,7 @@ function App() {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { 
     file, shape, widthMM, altMult, gridRes, paddingFac, 
-    embossText, status, loading, font, mesh, terrainData 
+    embossText, status, loading, font, mesh, terrainData, rotationAngle 
   } = state;
 
   // Load font on mount
@@ -129,7 +133,8 @@ function App() {
         altMult,
         shape,
         embossText,
-        font
+        font,
+        rotationAngle
       );
       
       dispatch({ type: 'SET_MESH', payload: result.mesh });
@@ -164,7 +169,8 @@ function App() {
         altMult,
         shape,
         embossText,
-        font
+        font,
+        rotationAngle
       );
       dispatch({ type: 'SET_MESH', payload: result.mesh });
       dispatch({ type: 'SET_STATUS', payload: '' });
@@ -176,6 +182,10 @@ function App() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
+  };
+  
+  const handleRotationChange = (angle: number) => {
+    dispatch({ type: 'SET_ROTATION_ANGLE', payload: angle });
   };
 
   const handleDownload = () => {
@@ -212,6 +222,8 @@ function App() {
           onRegenerate={handleUpdateModel}
           loading={loading}
           onReset={handleReset}
+          rotationAngle={rotationAngle}
+          onRotationChange={handleRotationChange}
         />
       ) : (
         <HomePage
