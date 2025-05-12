@@ -16,6 +16,9 @@ export interface CameraState {
 export interface RendererOptions {
   enableContrast?: boolean;
   backgroundColor?: number;
+  ambientLightIntensity?: number;
+  directionalLightIntensity?: number;
+  hemisphereLightIntensity?: number;
 }
 
 /**
@@ -32,9 +35,17 @@ export default class Renderer {
   private options: RendererOptions = {
     enableContrast: false,
     backgroundColor: 0xeeeeee,
+    ambientLightIntensity: 0.8,
+    directionalLightIntensity: 1.5,
+    hemisphereLightIntensity: 0.6,
   };
 
-  constructor(containerSelector: string, options?: RendererOptions) {
+  // Light references for adjustment
+  private ambientLight!: THREE.AmbientLight;
+  private directionalLight!: THREE.DirectionalLight;
+  private hemisphereLight!: THREE.HemisphereLight;
+
+  constructor(containerSelector: string, options?: Partial<RendererOptions>) {
     const container = document.querySelector(containerSelector) as HTMLElement;
     if (!container) {
       throw new Error(`Container not found: ${containerSelector}`);
@@ -77,15 +88,29 @@ export default class Renderer {
    * Initialize lighting for the scene
    */
   private initLights(): void {
-    const ambient = new THREE.AmbientLight(0xffffff, 1.0);
-    const directional = new THREE.DirectionalLight(0xffffff, 1.2);
-    const hemisphere = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    // Ambient light - general illumination
+    this.ambientLight = new THREE.AmbientLight(
+      0xffffff,
+      this.options.ambientLightIntensity || 0.8
+    );
 
-    directional.position.set(0.5, -1, 1).normalize();
+    // Main directional light - simulates sunlight
+    this.directionalLight = new THREE.DirectionalLight(
+      0xffffff,
+      this.options.directionalLightIntensity || 1.5
+    );
+    this.directionalLight.position.set(-0.25, 1, 1).normalize();
 
-    this.scene.add(ambient);
-    this.scene.add(directional);
-    this.scene.add(hemisphere);
+    // Hemisphere light - subtle gradient light
+    this.hemisphereLight = new THREE.HemisphereLight(
+      0xffffff,
+      0x444444,
+      this.options.hemisphereLightIntensity || 0.6
+    );
+
+    this.scene.add(this.ambientLight);
+    this.scene.add(this.directionalLight);
+    this.scene.add(this.hemisphereLight);
   }
 
   /**
@@ -95,8 +120,14 @@ export default class Renderer {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
     this.renderer.setSize(width, height, true);
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.container.innerHTML = "";
     this.container.appendChild(this.renderer.domElement);
@@ -112,6 +143,32 @@ export default class Renderer {
     this.controls.enablePan = true;
     this.controls.enableZoom = true;
     this.controls.enableRotate = true;
+  }
+
+  /**
+   * Adjust lighting settings
+   */
+  public adjustLighting(options: {
+    ambientIntensity?: number;
+    directionalIntensity?: number;
+    hemisphereIntensity?: number;
+  }): void {
+    if (options.ambientIntensity !== undefined) {
+      this.ambientLight.intensity = options.ambientIntensity;
+      this.options.ambientLightIntensity = options.ambientIntensity;
+    }
+
+    if (options.directionalIntensity !== undefined) {
+      this.directionalLight.intensity = options.directionalIntensity;
+      this.options.directionalLightIntensity = options.directionalIntensity;
+    }
+
+    if (options.hemisphereIntensity !== undefined) {
+      this.hemisphereLight.intensity = options.hemisphereIntensity;
+      this.options.hemisphereLightIntensity = options.hemisphereIntensity;
+    }
+
+    this.render();
   }
 
   /**
