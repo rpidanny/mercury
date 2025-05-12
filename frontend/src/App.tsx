@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from 'react';
+import { useReducer, useEffect } from 'react';
 
 import GPXParser from './lib/GPXParser';
 import TerrainGenerator from './lib/TerrainGenerator';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShapeType } from '../lib/types';
 
 interface FormControlsProps {
