@@ -44,11 +44,15 @@ def test_get_elevation_grid(app, test_data_path):
         service = ElevationService(logger=app.logger, dsm_path=test_data_path)
 
         # Use coordinates within the test VRT file (Mount Everest area)
-        lat_vals = [27.97, 27.98, 27.99]
-        lon_vals = [86.91, 86.92, 86.93]
+        bounds = {
+            "min_latitude": 27.97,
+            "max_latitude": 27.99,
+            "min_longitude": 86.91,
+            "max_longitude": 86.93,
+        }
         res = 3
 
-        results, width, height = service.get_elevation_grid(lat_vals, lon_vals, res)
+        results, width, height = service.get_elevation_grid(bounds, res)
 
         # Check dimensions
         assert width == res
@@ -96,13 +100,17 @@ def test_get_elevation_grid_error_handling(app, test_data_path):
         with patch("rasterio.open") as mock_open:
             mock_open.side_effect = Exception("Test exception")
 
-            lat_vals = [35.0, 35.1, 35.2, 35.3, 35.4]
-            lon_vals = [139.0, 139.1, 139.2, 139.3, 139.4]
+            bounds = {
+                "min_latitude": 35.0,
+                "max_latitude": 35.4,
+                "min_longitude": 139.0,
+                "max_longitude": 139.4,
+            }
             res = 5
 
             # Function should re-raise the exception
             with pytest.raises(Exception):
-                service.get_elevation_grid(lat_vals, lon_vals, res)
+                service.get_elevation_grid(bounds, res)
 
         # Verify that the exception was logged
         mock_logger.exception.assert_called_once()
