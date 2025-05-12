@@ -11,9 +11,9 @@
   justify-content: center;
 
   /* Semi-transparent backdrop with blur */
-  background-color: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background-color: rgba(241, 245, 249, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 
   /* Smooth appearance animation */
   animation: fadeIn 0.3s ease-in-out;
@@ -36,35 +36,35 @@
   align-items: center;
   justify-content: center;
   max-width: 80%;
-  padding: 2rem;
+  padding: 2.5rem;
 
   /* Glass effect container for the loading spinner and text */
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.7);
   border-radius: 1rem;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(148, 163, 184, 0.15),
+    0 2px 6px rgba(148, 163, 184, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 /* Loading message styling */
 .loading-message {
   margin-top: 1.5rem;
-  color: white;
+  color: #334155;
   font-size: 1.125rem;
   font-weight: 500;
   text-align: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Extended loading message */
 .loading-extended-message {
   margin-top: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   font-size: 0.875rem;
   font-style: italic;
   text-align: center;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 
   /* Subtle fade-in animation */
   animation: fadeIn 0.5s ease-in-out;
@@ -84,7 +84,7 @@
   height: 100%;
   border-radius: 50%;
   border: 4px solid transparent;
-  border-top-color: rgba(255, 255, 255, 0.9);
+  border-top-color: rgba(99, 102, 241, 0.9);
   animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
@@ -96,7 +96,7 @@
   width: 70%;
   height: 70%;
   margin: 15%;
-  border-top-color: rgba(255, 75, 150, 0.9);
+  border-top-color: rgba(139, 92, 246, 0.9);
   animation-delay: -0.3s;
 }
 
@@ -104,7 +104,7 @@
   width: 40%;
   height: 40%;
   margin: 30%;
-  border-top-color: rgba(150, 100, 255, 0.9);
+  border-top-color: rgba(167, 139, 250, 0.9);
   animation-delay: -0.15s;
 }
 
@@ -139,7 +139,7 @@
 /* Media query for mobile devices */
 @media (max-width: 640px) {
   .loading-content {
-    padding: 1.5rem;
+    padding: 1.75rem;
     max-width: 90%;
   }
 

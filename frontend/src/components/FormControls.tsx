@@ -21,13 +21,13 @@ export function CompactFormControls({
   return (
     <>
       <div className="flex items-center space-x-2">
-        <label className="font-medium text-sm text-gray-700">Width (mm):</label>
+        <label className="font-medium text-sm text-slate-700">Width (mm):</label>
         <input
           type="number"
           value={widthMM}
           onChange={e => onWidthChange(+e.target.value)}
           min={10}
-          className="w-20 border-gray-300 rounded p-1 bg-white text-sm"
+          className="input-field w-20 focus:outline-none"
         />
       </div>
     </>
@@ -44,15 +44,15 @@ export function FullFormControls({
 }: FormControlsProps) {
   return (
     <>
-      <div className="mb-6">
-        <label htmlFor="shape" className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="mb-5">
+        <label htmlFor="shape" className="block text-sm font-medium text-slate-700 mb-1.5">
           Shape
         </label>
         <select
           id="shape"
           value={shape}
           onChange={e => onShapeChange(e.target.value as ShapeType)}
-          className="mt-2 w-full bg-transparent border-b border-gray-300 text-gray-900 focus:border-pink-500 focus:outline-none py-2 px-1 transition"
+          className="input-field w-full focus:outline-none appearance-none"
         >
           <option value="hexagon">Hexagon</option>
           <option value="square">Square</option>
@@ -60,10 +60,10 @@ export function FullFormControls({
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
         <div>
-          <label htmlFor="modelWidth" className="block text-sm font-medium text-gray-700 mb-1">
-            Model Width (mm)
+          <label htmlFor="modelWidth" className="block text-sm font-medium text-slate-700 mb-1.5">
+            Width (mm)
           </label>
           <input
             type="number"
@@ -71,12 +71,12 @@ export function FullFormControls({
             value={widthMM}
             onChange={e => onWidthChange(+e.target.value)}
             min={10}
-            className="mt-2 w-full bg-transparent border-b border-gray-300 text-gray-900 focus:border-pink-500 focus:outline-none py-2 px-1 transition"
+            className="input-field w-full focus:outline-none"
           />
         </div>
         <div>
-          <label htmlFor="altMult" className="block text-sm font-medium text-gray-700 mb-1">
-            Altitude Multiplier
+          <label htmlFor="altMult" className="block text-sm font-medium text-slate-700 mb-1.5">
+            Alt. Multiplier
           </label>
           <input
             type="number"
@@ -85,7 +85,7 @@ export function FullFormControls({
             onChange={e => onAltMultChange(+e.target.value)}
             min={0.1}
             step={0.1}
-            className="mt-2 w-full bg-transparent border-b border-gray-300 text-gray-900 focus:border-pink-500 focus:outline-none py-2 px-1 transition"
+            className="input-field w-full focus:outline-none"
           />
         </div>
       </div>

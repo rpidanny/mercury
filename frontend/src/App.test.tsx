@@ -111,34 +111,6 @@ vi.mock('three/examples/jsm/exporters/STLExporter.js', () => ({
   }
 }));
 
-// Mock GPX file content
-const mockGpxText = `
-<?xml version="1.0" encoding="UTF-8"?>
-<gpx>
-  <trk>
-    <trkseg>
-      <trkpt lat="37.7749" lon="-122.4194">
-        <ele>10</ele>
-      </trkpt>
-      <trkpt lat="37.7750" lon="-122.4195">
-        <ele>15</ele>
-      </trkpt>
-    </trkseg>
-  </trk>
-</gpx>
-`;
-
-// Create a custom File class with text method for testing
-class MockFile extends File {
-  constructor(bits: BlobPart[], name: string, options?: FilePropertyBag) {
-    super(bits, name, options);
-  }
-
-  text(): Promise<string> {
-    return Promise.resolve(mockGpxText);
-  }
-}
-
 // Mock other modules
 vi.mock('./lib/GPXParser', () => ({
   default: {
