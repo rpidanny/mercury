@@ -109,10 +109,22 @@ export const useModelBuilder = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'model.stl';
+    
+    // Get the original filename from the GPX file
+    const originalFileName = state.file?.name.replace(/\.[^/.]+$/, '') || 'model';
+    
+    // Get render configs
+    const { gridRes, paddingFac } = modelConfig;
+    
+    // Create timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    
+    // Construct the filename with configs and timestamp
+    a.download = `${originalFileName}_res${gridRes}_pad${paddingFac}_${timestamp}.stl`;
+    
     a.click();
     URL.revokeObjectURL(url);
-  }, [localMesh]);
+  }, [localMesh, state.file, modelConfig]);
 
   return {
     localMesh,
