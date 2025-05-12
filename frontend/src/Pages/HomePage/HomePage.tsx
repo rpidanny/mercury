@@ -21,8 +21,8 @@ export default function HomePage() {
             Turn your adventure into a 3D view of the surrounding terrain
           </h3>
 
-          <div className="mb-4">
-            <label htmlFor="gpx" className="block text-sm font-medium text-slate-700 mb-1">
+          <div className="mb-5">
+            <label htmlFor="gpx" className="block text-sm font-medium text-slate-700 mb-1.5">
               Upload GPX File
             </label>
             <input
@@ -43,37 +43,38 @@ export default function HomePage() {
             onAltMultChange={(altMult) => updateModelConfig({ altMult })}
           />
 
-          <div className="mb-4">
-            <label htmlFor="gridRes" className="block text-sm font-medium text-slate-700 mb-1">
-              Grid Resolution
-            </label>
-            <input
-              type="number"
-              id="gridRes"
-              value={gridRes}
-              onChange={e => updateModelConfig({ gridRes: +e.target.value })}
-              min={1}
-              className="input-field w-full focus:outline-none"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="paddingFac" className="block text-sm font-medium text-slate-700 mb-1">
-              Padding Factor
-            </label>
-            <input
-              type="number"
-              id="paddingFac"
-              value={paddingFac}
-              onChange={e => updateModelConfig({ paddingFac: +e.target.value })}
-              min={1}
-              step={0.05}
-              className="input-field w-full focus:outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <div>
+              <label htmlFor="gridRes" className="block text-sm font-medium text-slate-700 mb-1.5">
+                Grid Resolution
+              </label>
+              <input
+                type="number"
+                id="gridRes"
+                value={gridRes}
+                onChange={e => updateModelConfig({ gridRes: +e.target.value })}
+                min={1}
+                className="input-field w-full focus:outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="paddingFac" className="block text-sm font-medium text-slate-700 mb-1.5">
+                Padding Factor
+              </label>
+              <input
+                type="number"
+                id="paddingFac"
+                value={paddingFac}
+                onChange={e => updateModelConfig({ paddingFac: +e.target.value })}
+                min={1}
+                step={0.05}
+                className="input-field w-full focus:outline-none"
+              />
+            </div>
           </div>
 
           <div className="mb-6">
-            <label htmlFor="embossText" className="block text-sm font-medium text-slate-700 mb-1">
+            <label htmlFor="embossText" className="block text-sm font-medium text-slate-700 mb-1.5">
               Text to Emboss (Optional)
             </label>
             <textarea

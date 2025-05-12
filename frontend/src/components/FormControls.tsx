@@ -44,8 +44,8 @@ export function FullFormControls({
 }: FormControlsProps) {
   return (
     <>
-      <div className="mb-4">
-        <label htmlFor="shape" className="block text-sm font-medium text-slate-700 mb-1">
+      <div className="mb-5">
+        <label htmlFor="shape" className="block text-sm font-medium text-slate-700 mb-1.5">
           Shape
         </label>
         <select
@@ -60,9 +60,9 @@ export function FullFormControls({
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
         <div>
-          <label htmlFor="modelWidth" className="block text-sm font-medium text-slate-700 mb-1">
+          <label htmlFor="modelWidth" className="block text-sm font-medium text-slate-700 mb-1.5">
             Width (mm)
           </label>
           <input
@@ -75,7 +75,7 @@ export function FullFormControls({
           />
         </div>
         <div>
-          <label htmlFor="altMult" className="block text-sm font-medium text-slate-700 mb-1">
+          <label htmlFor="altMult" className="block text-sm font-medium text-slate-700 mb-1.5">
             Alt. Multiplier
           </label>
           <input
