@@ -114,41 +114,117 @@ body.model-mode #scene-container canvas {
   touch-action: none;
 }
 
-/* Rotation control styles */
-.rotation-control {
+/* Toolbar styles */
+.toolbar {
   position: absolute;
-  right: 1.5rem;
   top: 1.5rem;
+  right: 1.5rem;
   z-index: 10;
   display: flex;
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
-  border-radius: 2rem;
-  padding: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: all 0.2s ease;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.rotation-control:hover {
+.toolbar-control {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #374151;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.toolbar-button:hover {
   background-color: white;
+  transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.rotation-icon {
-  display: inline-block;
-  margin-right: 0.4rem;
-  vertical-align: -0.125rem;
-  color: #3b82f6;
+.toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.rotation-label {
-  font-size: 0.875rem;
+.toolbar-button:disabled:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  transform: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.toolbar-button svg {
   color: #374151;
-  margin-right: 0.75rem;
-  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.toolbar-control.active .toolbar-button {
+  background-color: #3b82f6;
+}
+
+.toolbar-control.active .toolbar-button svg {
+  color: white;
+}
+
+.toolbar-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 20;
+  animation: slideIn 0.2s ease;
+  min-width: 200px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Rotation control styles */
+.toolbar-button.is-rotating svg {
+  animation: spin 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.slider-container {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .rotation-slider {
@@ -200,87 +276,78 @@ body.model-mode #scene-container canvas {
 .rotation-value {
   font-size: 0.875rem;
   color: #374151;
-  margin-left: 0.75rem;
   min-width: 36px;
-  text-align: center;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* Shape selector styles */
+.shape-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.shape-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background-color: rgba(255, 255, 255, 0.5);
+  color: #374151;
+  border-radius: 0.5rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shape-button:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+}
+
+.shape-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.shape-button:disabled:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+  transform: none;
+}
+
+.shape-button.active {
+  background-color: white;
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 @media (max-width: 640px) {
-  .rotation-control {
-    right: 1rem;
+  .toolbar {
     top: 1rem;
-    padding: 0.3rem 0.5rem;
+    right: 1rem;
+    gap: 0.5rem;
+  }
+
+  .toolbar-button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .toolbar-panel {
+    min-width: 180px;
+    padding: 0.75rem;
   }
 
   .rotation-slider {
-    width: 100px;
+    width: 120px;
   }
 
-  .rotation-label {
-    font-size: 0.75rem;
-    margin-right: 0.5rem;
-  }
-
-  .rotation-value {
-    font-size: 0.75rem;
-    margin-left: 0.5rem;
-  }
-}
-
-.rotation-control.is-rotating {
-  background-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-}
-
-.rotation-control.is-rotating .rotation-icon {
-  animation: spin 1.5s ease-in-out infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.rotation-tooltip {
-  position: absolute;
-  bottom: -2.5rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  background-color: rgba(0, 0, 0, 0.75);
-  color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: all 0.2s ease-in-out;
-  z-index: 20;
-}
-
-.rotation-tooltip::before {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: transparent transparent rgba(0, 0, 0, 0.75) transparent;
-}
-
-.rotation-control:hover .rotation-tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-@media (max-width: 640px) {
-  .rotation-tooltip {
-    display: none;
+  .shape-button {
+    width: 2.5rem;
+    height: 2.5rem;
   }
 }

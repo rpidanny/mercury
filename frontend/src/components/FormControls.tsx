@@ -10,27 +10,13 @@ interface FormControlsProps {
 }
 
 export function CompactFormControls({
-  shape,
-  onShapeChange,
   widthMM,
   onWidthChange,
   altMult,
   onAltMultChange,
-}: FormControlsProps) {
+}: Omit<FormControlsProps, 'shape' | 'onShapeChange'>) {
   return (
     <>
-      <div className="flex items-center space-x-2">
-        <label className="font-medium text-sm text-gray-700">Shape:</label>
-        <select
-          value={shape}
-          onChange={e => onShapeChange(e.target.value as ShapeType)}
-          className="border-gray-300 rounded p-1 bg-white text-sm"
-        >
-          <option value="hexagon">Hexagon</option>
-          <option value="square">Square</option>
-          <option value="circle">Circle</option>
-        </select>
-      </div>
       <div className="flex items-center space-x-2">
         <label className="font-medium text-sm text-gray-700">Width (mm):</label>
         <input
