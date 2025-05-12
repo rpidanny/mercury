@@ -39,14 +39,23 @@ export default function PreviewPage({
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const [isRotating, setIsRotating] = useState<boolean>(false);
+  const isInitialRender = useRef<boolean>(true);
 
   useEffect(() => {
     document.body.classList.add('model-mode');
-    if (containerRef.current) {
+    
+    // Only create a new renderer on the first render
+    if (containerRef.current && isInitialRender.current) {
       const renderer = new Renderer('#scene-container');
       rendererRef.current = renderer;
       renderer.renderMesh(mesh);
+      isInitialRender.current = false;
+    } 
+    // On subsequent renders, update the mesh while preserving camera position
+    else if (rendererRef.current) {
+      rendererRef.current.updateMeshPreserveCamera(mesh);
     }
+    
     return () => {
       document.body.classList.remove('model-mode');
     };

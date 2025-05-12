@@ -2,6 +2,15 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 /**
+ * Represents the camera and controls state that can be saved and restored
+ */
+export interface CameraState {
+  position: THREE.Vector3;
+  target: THREE.Vector3;
+  zoom: number;
+}
+
+/**
  * Renderer encapsulates a Three.js scene, camera, and WebGLRenderer.
  * It renders the given mesh into the specified container.
  */
@@ -61,6 +70,52 @@ export default class Renderer {
 
     // Handle resize
     window.addEventListener("resize", this.onWindowResize.bind(this));
+  }
+
+  /**
+   * Get the current camera state which can be saved and restored later
+   */
+  public getCameraState(): CameraState {
+    return {
+      position: this.camera.position.clone(),
+      target: this.controls.target.clone(),
+      zoom: this.camera.zoom,
+    };
+  }
+
+  /**
+   * Restore a previously saved camera state
+   */
+  public setCameraState(state: CameraState): void {
+    this.camera.position.copy(state.position);
+    this.controls.target.copy(state.target);
+    this.camera.zoom = state.zoom;
+    this.camera.updateProjectionMatrix();
+    this.controls.update();
+    this.render();
+  }
+
+  /**
+   * Replace the mesh while preserving camera position
+   */
+  public updateMeshPreserveCamera(object: THREE.Object3D): void {
+    // Save camera state
+    const cameraState = this.getCameraState();
+
+    // Remove all existing objects except lights
+    this.scene.children
+      .filter((obj) => !(obj instanceof THREE.Light))
+      .forEach((obj) => this.scene.remove(obj));
+
+    // Add new mesh
+    this.scene.add(object);
+    this.currentMesh = object;
+
+    // Restore camera state
+    this.setCameraState(cameraState);
+
+    // Render once
+    this.render();
   }
 
   private onWindowResize(): void {
