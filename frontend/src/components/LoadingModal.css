@@ -1,0 +1,158 @@
+/* Base modal structure */
+.loading-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Semi-transparent backdrop with blur */
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  /* Smooth appearance animation */
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Content container */
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 80%;
+  padding: 2rem;
+
+  /* Glass effect container for the loading spinner and text */
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Loading message styling */
+.loading-message {
+  margin-top: 1.5rem;
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 500;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Extended loading message */
+.loading-extended-message {
+  margin-top: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  font-style: italic;
+  text-align: center;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+
+  /* Subtle fade-in animation */
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Spinner container */
+.loading-spinner {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+/* Spinning rings animation */
+.spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.9);
+  animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-ring:nth-child(1) {
+  animation-delay: -0.45s;
+}
+
+.spinner-ring:nth-child(2) {
+  width: 70%;
+  height: 70%;
+  margin: 15%;
+  border-top-color: rgba(255, 75, 150, 0.9);
+  animation-delay: -0.3s;
+}
+
+.spinner-ring:nth-child(3) {
+  width: 40%;
+  height: 40%;
+  margin: 30%;
+  border-top-color: rgba(150, 100, 255, 0.9);
+  animation-delay: -0.15s;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse animation for extended loading times */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Apply subtle pulse to spinner in extended loading state */
+.loading-modal.extended-loading .spinner-ring {
+  animation-duration: 1.5s;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 640px) {
+  .loading-content {
+    padding: 1.5rem;
+    max-width: 90%;
+  }
+
+  .loading-spinner {
+    width: 60px;
+    height: 60px;
+  }
+
+  .loading-message {
+    font-size: 1rem;
+  }
+
+  .loading-extended-message {
+    font-size: 0.75rem;
+  }
+}

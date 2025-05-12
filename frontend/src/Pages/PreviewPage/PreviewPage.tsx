@@ -1,11 +1,7 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import Renderer from '../../lib/Renderer';
+import React, { useState, useRef, useCallback } from 'react';
 import { ShapeType } from '../../lib/types';
-import type { Object3D } from 'three';
-import type { Font } from 'three/examples/jsm/loaders/FontLoader.js';
-import type { TerrainData } from '../../lib/TerrainGenerator';
-import ModelBuilder from '../../lib/ModelBuilder';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
+import { useAppContext } from '../../context/AppContext';
+import { useModelBuilder } from '../../hooks/useModelBuilder';
 import { 
   WidthIcon, 
   ShapeIcon, 
@@ -27,177 +23,21 @@ declare global {
   }
 }
 
-interface PreviewPageProps {
-  terrainData: TerrainData;
-  font: Font | null;
-  embossText: string;
-  initialShape: ShapeType;
-  initialWidthMM: number;
-  initialAltMult: number;
-  initialRotationAngle: number;
-  loading: boolean;
-  setLoading: (isLoading: boolean, message?: string) => void;
-  onReset: () => void;
-}
-
-// Custom hook for model building and rendering
-function useModelBuilder(
-  terrainData: TerrainData, 
-  widthMM: number, 
-  altMult: number, 
-  shape: ShapeType, 
-  embossText: string, 
-  font: Font | null, 
-  rotationAngle: number,
-  setLoading: (isLoading: boolean, message?: string) => void
-) {
-  const [localMesh, setLocalMesh] = useState<Object3D | null>(null);
-  const [pendingChanges, setPendingChanges] = useState<boolean>(false);
-  const rendererRef = useRef<Renderer | null>(null);
-  const [isRendererInitialized, setIsRendererInitialized] = useState<boolean>(false);
-  const initialRenderComplete = useRef<boolean>(false);
-  const isBuildingModel = useRef<boolean>(false);
-
-  // Initialize renderer on mount
-  useEffect(() => {
-    document.body.classList.add('model-mode');
-    
-    if (!rendererRef.current) {
-      const renderer = new Renderer('#scene-container');
-      rendererRef.current = renderer;
-      setIsRendererInitialized(true);
-    }
-    
-    return () => {
-      document.body.classList.remove('model-mode');
-    };
-  }, []);
-
-  // Build model when needed or when params change
-  useEffect(() => {
-    if (!terrainData || !isRendererInitialized || isBuildingModel.current) return;
-    
-    const buildModel = async () => {
-      if (!localMesh) {
-        setLoading(true, 'Building 3D model...');
-      }
-
-      isBuildingModel.current = true;
-      
-      try {
-        // Ensure the loading state has time to be applied to the UI
-        await new Promise(resolve => setTimeout(resolve, 10));
-        
-        // Wrap model building in a Promise to make it asynchronous
-        const result = await new Promise<{ mesh: Object3D }>((resolve) => {
-          requestAnimationFrame(() => {
-            const modelResult = ModelBuilder.build(
-              terrainData,
-              widthMM,
-              altMult,
-              shape,
-              embossText,
-              font,
-              rotationAngle
-            );
-            resolve(modelResult);
-          });
-        });
-        
-        setLocalMesh(result.mesh);
-        
-        // Directly render the mesh for the first time
-        if (!initialRenderComplete.current && rendererRef.current) {
-          rendererRef.current.renderMesh(result.mesh);
-          initialRenderComplete.current = true;
-        }
-      } catch (err: unknown) {
-        setLoading(true, err instanceof Error ? err.message : String(err));
-      } finally {
-        setTimeout(() => {
-          setLoading(false);
-          setPendingChanges(false);
-          isBuildingModel.current = false;
-        }, 300);
-      }
-    };
-    
-    if (!initialRenderComplete.current || pendingChanges) {
-      buildModel();
-    }
-  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, setLoading, isRendererInitialized]);
+export default function PreviewPage() {
+  const { state, updateModelConfig, resetTerrain } = useAppContext();
+  const { ui, modelConfig } = state;
+  const { loading } = ui;
+  const { shape, widthMM, altMult, rotationAngle } = modelConfig;
   
-  // Update renderer when mesh changes after initial render
-  useEffect(() => {
-    if (rendererRef.current && localMesh && initialRenderComplete.current) {
-      rendererRef.current.updateMeshPreserveCamera(localMesh);
-    }
-  }, [localMesh]);
-
-  const setModelChange = useCallback(() => {
-    setPendingChanges(true);
-    setLoading(true, 'Updating model...');
-  }, [setLoading]);
-
-  // Handle download functionality
-  const handleDownload = useCallback(() => {
-    if (!localMesh) return;
-    
-    const exporter = new STLExporter();
-    const stlString = exporter.parse(localMesh);
-    const blob = new Blob([stlString], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'model.stl';
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [localMesh]);
-
-  return {
-    localMesh,
-    setModelChange,
-    handleDownload
-  };
-}
-
-// Main PreviewPage Component
-export default function PreviewPage({
-  terrainData,
-  font,
-  embossText,
-  initialShape,
-  initialWidthMM,
-  initialAltMult,
-  initialRotationAngle,
-  loading,
-  setLoading,
-  onReset,
-}: PreviewPageProps) {
-  // Local state for all toolbox values
-  const [shape, setShape] = useState<ShapeType>(initialShape);
-  const [widthMM, setWidthMM] = useState<number>(initialWidthMM);
-  const [altMult, setAltMult] = useState<number>(initialAltMult);
-  const [rotationAngle, setRotationAngle] = useState<number>(initialRotationAngle);
-  
-  // UI state
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Local UI state
   const [activeControl, setActiveControl] = useState<string | null>(null);
   const [isRotating, setIsRotating] = useState<boolean>(false);
   const [isAltitudeChanging, setIsAltitudeChanging] = useState<boolean>(false);
   const [isWidthChanging, setIsWidthChanging] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Use the custom hook for model building and rendering
-  const { localMesh, setModelChange, handleDownload } = useModelBuilder(
-    terrainData,
-    widthMM,
-    altMult,
-    shape,
-    embossText,
-    font,
-    rotationAngle,
-    setLoading
-  );
+  const { localMesh, updateModel, downloadModel } = useModelBuilder();
 
   // Toggle active control panel
   const toggleControl = useCallback((controlName: string) => {
@@ -206,8 +46,8 @@ export default function PreviewPage({
 
   // Handle rotation changes
   const handleRotationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setRotationAngle(parseInt(e.target.value, 10));
-  }, []);
+    updateModelConfig({ rotationAngle: parseInt(e.target.value, 10) });
+  }, [updateModelConfig]);
   
   const handleRotationStart = useCallback(() => {
     setIsRotating(true);
@@ -215,13 +55,13 @@ export default function PreviewPage({
   
   const handleRotationEnd = useCallback(() => {
     setIsRotating(false);
-    setModelChange();
-  }, [setModelChange]);
+    updateModel();
+  }, [updateModel]);
 
   // Handle altitude multiplier changes
   const handleAltitudeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setAltMult(parseFloat(e.target.value));
-  }, []);
+    updateModelConfig({ altMult: parseFloat(e.target.value) });
+  }, [updateModelConfig]);
   
   const handleAltitudeStart = useCallback(() => {
     setIsAltitudeChanging(true);
@@ -229,12 +69,12 @@ export default function PreviewPage({
   
   const handleAltitudeEnd = useCallback(() => {
     setIsAltitudeChanging(false);
-    setModelChange();
-  }, [setModelChange]);
+    updateModel();
+  }, [updateModel]);
 
   // Handle width changes with debounce
   const handleWidthChange = useCallback((newValue: number) => {
-    setWidthMM(newValue);  
+    updateModelConfig({ widthMM: newValue });
     setIsWidthChanging(true);
     
     // Debounce model updates
@@ -244,23 +84,23 @@ export default function PreviewPage({
     
     window.widthChangeTimeout = setTimeout(() => {
       setIsWidthChanging(false);
-      setModelChange();
+      updateModel();
     }, 300);
-  }, [setModelChange]);
+  }, [updateModelConfig, updateModel]);
 
   // Handle shape change
   const handleShapeChange = useCallback((newShape: ShapeType) => {
     // Only process if the shape actually changed
     if (newShape !== shape) {
-      setShape(newShape);
-      setModelChange();
+      updateModelConfig({ shape: newShape });
+      updateModel();
     }
     
     // Close the shape control after selection
     setTimeout(() => {
       setActiveControl(null);
     }, 300);
-  }, [shape, setModelChange]);
+  }, [shape, updateModelConfig, updateModel]);
 
   const isShapeActive = useCallback((currentShape: ShapeType) => 
     shape === currentShape ? 'active' : '', 
@@ -272,7 +112,7 @@ export default function PreviewPage({
       
       <div className="home-button-container">
         <button 
-          onClick={onReset}
+          onClick={resetTerrain}
           className="home-button"
           aria-label="Back to home"
         >
@@ -283,7 +123,7 @@ export default function PreviewPage({
       
       <div className="action-button-container">
         <button
-          onClick={handleDownload}
+          onClick={downloadModel}
           className="action-button"
           title="Download STL model"
           disabled={loading || !localMesh}
