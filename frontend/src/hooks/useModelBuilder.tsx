@@ -85,7 +85,7 @@ export const useModelBuilder = () => {
     if (!initialRenderComplete.current || pendingChanges) {
       buildModel();
     }
-  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, setLoading, isRendererInitialized]);
+  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, setLoading, isRendererInitialized, localMesh]);
   
   // Update renderer when mesh changes after initial render
   useEffect(() => {
