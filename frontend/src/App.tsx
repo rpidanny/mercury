@@ -1,4 +1,5 @@
 import React, { useReducer, useEffect } from 'react';
+
 import GPXParser from './lib/GPXParser';
 import TerrainGenerator from './lib/TerrainGenerator';
 import type { TerrainData } from './lib/TerrainGenerator';
@@ -190,6 +191,11 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleReset = () => {
+    dispatch({ type: 'SET_MESH', payload: null });
+    dispatch({ type: 'SET_TERRAIN_DATA', payload: null });
+  };
+
   return (
     <>
       <LoadingModal message={status || (loading ? 'Loading...' : null)} />
@@ -205,6 +211,7 @@ function App() {
           onAltMultChange={(v) => dispatch({ type: 'SET_ALT_MULT', payload: v })}
           onRegenerate={handleUpdateModel}
           loading={loading}
+          onReset={handleReset}
         />
       ) : (
         <HomePage
