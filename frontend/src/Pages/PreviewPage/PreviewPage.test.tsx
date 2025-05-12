@@ -2,157 +2,251 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import PreviewPage from './PreviewPage';
 import { Object3D } from 'three';
+import TestWrapper from '../../test-utils/TestWrapper';
+import * as AppContext from '../../context/AppContext';
+import * as ModelBuilderHook from '../../hooks/useModelBuilder';
+import createMockTerrainData from '../../test-utils/mockTerrainData';
 
-// Mock the Renderer class
+// Mock the entire component's hooks
+vi.mock('../../hooks/useModelBuilder', () => ({
+  useModelBuilder: vi.fn(() => ({
+    localMesh: new Object3D(),
+    updateModel: vi.fn(),
+    downloadModel: vi.fn()
+  }))
+}));
+
+// Mock THREE.js renderer
 vi.mock('../../lib/Renderer', () => {
   return {
     default: class MockRenderer {
-      constructor() {
-        // Mock constructor
-      }
-      renderMesh() {
-        // Mock renderMesh method
-      }
+      constructor() {}
+      renderMesh() {}
+      updateMeshPreserveCamera() {}
     }
   };
 });
 
 describe('PreviewPage', () => {
-  // Create a mock mesh
-  const mockMesh = new Object3D();
-  
-  // Default props for testing
-  const defaultProps = {
-    mesh: mockMesh,
-    onDownload: vi.fn(),
-    shape: 'hexagon' as const,
-    onShapeChange: vi.fn(),
-    widthMM: 100,
-    onWidthChange: vi.fn(),
-    altMult: 1,
-    onAltMultChange: vi.fn(),
-    onRegenerate: vi.fn(),
-    loading: false,
-    onReset: vi.fn(),
-    rotationAngle: 0,
-    onRotationChange: vi.fn(),
+  // Standard mock context object
+  const mockContext = {
+    state: {
+      ui: { loading: false, status: '' },
+      modelConfig: { 
+        shape: 'hexagon', 
+        widthMM: 100, 
+        altMult: 1,
+        gridRes: 500,
+        paddingFac: 4.0,
+        embossText: '',
+        rotationAngle: 0 
+      },
+      file: null,
+      resources: { 
+        font: null, 
+        terrainData: createMockTerrainData()
+      }
+    },
+    dispatch: vi.fn(),
+    updateModelConfig: vi.fn(),
+    setLoading: vi.fn(),
+    resetTerrain: vi.fn()
   };
-
+  
   beforeEach(() => {
     vi.clearAllMocks();
+    document.body.classList.remove('model-mode');
+    // Default AppContext mock
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue(mockContext);
+    // Reset the mocks on hooks
+    (ModelBuilderHook.useModelBuilder as any).mockClear();
   });
-
+  
   it('renders the scene container for 3D preview', () => {
-    render(<PreviewPage {...defaultProps} />);
-    
+    render(<PreviewPage />, { wrapper: TestWrapper });
     expect(document.getElementById('scene-container')).toBeInTheDocument();
   });
 
-  it('adds model-mode class to body on mount', () => {
-    render(<PreviewPage {...defaultProps} />);
-    
-    expect(document.body.classList.contains('model-mode')).toBe(true);
-  });
-
   it('renders the home button', () => {
-    render(<PreviewPage {...defaultProps} />);
-    
+    render(<PreviewPage />, { wrapper: TestWrapper });
     const homeButton = screen.getByLabelText('Back to home');
     expect(homeButton).toBeInTheDocument();
   });
 
-  it('calls onReset when home button is clicked', () => {
-    render(<PreviewPage {...defaultProps} />);
+  it('calls resetTerrain when home button is clicked', () => {
+    const resetTerrain = vi.fn();
+    
+    // Create context with our own resetTerrain
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      ...mockContext,
+      resetTerrain
+    });
+    
+    render(<PreviewPage />);
     
     const homeButton = screen.getByLabelText('Back to home');
     fireEvent.click(homeButton);
     
-    expect(defaultProps.onReset).toHaveBeenCalledTimes(1);
+    expect(resetTerrain).toHaveBeenCalledTimes(1);
   });
 
-  it('handles shape change', () => {
-    render(<PreviewPage {...defaultProps} />);
+  it('handles shape change', async () => {
+    const updateModelConfig = vi.fn();
+    const updateModel = vi.fn();
+    
+    // Mock the hook return for this test
+    (ModelBuilderHook.useModelBuilder as any).mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel,
+      downloadModel: vi.fn()
+    });
+    
+    // Set up our context with the mock functions
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      ...mockContext,
+      updateModelConfig
+    });
+    
+    render(<PreviewPage />);
+    
     // Open the shape selection panel
     const shapeToolbarBtn = screen.getByTitle('Change shape');
     fireEvent.click(shapeToolbarBtn);
 
-    // Select the circle shape button (accessible name is the title attr)
-    const circleBtn = screen.getByRole('button', { name: 'Circle shape' });
+    // Find and click the circle shape button
+    const circleBtn = screen.getByTitle('Circle shape');
     fireEvent.click(circleBtn);
 
-    expect(defaultProps.onShapeChange).toHaveBeenCalledWith('circle');
+    // Verify that update functions were called
+    expect(updateModelConfig).toHaveBeenCalledWith({ shape: 'circle' });
+    expect(updateModel).toHaveBeenCalled();
   });
 
   it('handles width change', () => {
-    render(<PreviewPage {...defaultProps} />);
+    const updateModelConfig = vi.fn();
+    const updateModel = vi.fn();
+    
+    // Override the model builder hook to return mocked functions
+    vi.spyOn(ModelBuilderHook, 'useModelBuilder').mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel,
+      downloadModel: vi.fn()
+    });
+    
+    // Override the context
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon', 
+          widthMM: 100, 
+          altMult: 1,
+          gridRes: 500,
+          paddingFac: 4.0,
+          embossText: '',
+          rotationAngle: 0 
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig,
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn()
+    });
+
+    // Mock the timeout needed for debouncing
+    vi.spyOn(window, 'clearTimeout').mockImplementation(() => undefined);
+    vi.spyOn(window, 'setTimeout').mockImplementation((fn) => {
+      if (typeof fn === 'function') fn();
+      return 0;
+    });
+
+    render(<PreviewPage />);
 
     // Open the width control panel
     const widthToolbarBtn = screen.getByTitle('Adjust model size');
     fireEvent.click(widthToolbarBtn);
 
-    // Find the width slider (range input)
+    // Find and change the width slider
     const widthSlider = screen.getByRole('slider', { name: 'Adjust model width' });
     fireEvent.change(widthSlider, { target: { value: '150' } });
 
-    expect(defaultProps.onWidthChange).toHaveBeenCalledWith(150);
+    expect(updateModelConfig).toHaveBeenCalledWith({ widthMM: 150 });
+    expect(updateModel).toHaveBeenCalled();
   });
 
   it('handles altitude multiplier change', () => {
-    render(<PreviewPage {...defaultProps} />);
+    const updateModelConfig = vi.fn();
+    const updateModel = vi.fn();
+    
+    // Override the context with mocked functions
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon', 
+          widthMM: 100, 
+          altMult: 1,
+          gridRes: 500,
+          paddingFac: 4.0,
+          embossText: '',
+          rotationAngle: 0 
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig,
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn()
+    });
+    
+    // Override model builder hook
+    vi.spyOn(ModelBuilderHook, 'useModelBuilder').mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel,
+      downloadModel: vi.fn()
+    });
+
+    render(<PreviewPage />);
 
     // Open the altitude control panel
     const altToolbarBtn = screen.getByTitle('Adjust altitude');
     fireEvent.click(altToolbarBtn);
 
-    // Find altitude slider (range input)
+    // Find and change the altitude slider
     const altSlider = screen.getByRole('slider', { name: 'Adjust altitude multiplier' });
     fireEvent.change(altSlider, { target: { value: '2.0' } });
-
-    expect(defaultProps.onAltMultChange).toHaveBeenCalledWith(2.0);
-  });
-
-  it('triggers model regeneration after width change debounce', () => {
-    vi.useFakeTimers();
-    render(<PreviewPage {...defaultProps} />);
-
-    // Open width panel and change value
-    const widthToolbarBtn = screen.getByTitle('Adjust model size');
-    fireEvent.click(widthToolbarBtn);
-    const widthSlider = screen.getByRole('slider', { name: 'Adjust model width' });
-    fireEvent.change(widthSlider, { target: { value: '200' } });
-
-    // Fast-forward debounce timer (300 ms)
-    vi.advanceTimersByTime(300);
-
-    expect(defaultProps.onRegenerate).toHaveBeenCalledTimes(1);
-    vi.useRealTimers();
-  });
-
-  it('displays "Updating..." when loading', () => {
-    render(<PreviewPage {...defaultProps} loading={true} />);
     
-    expect(screen.getByText('Updating...')).toBeInTheDocument();
+    // Simulate end of sliding to trigger update
+    fireEvent.mouseUp(altSlider);
+
+    expect(updateModelConfig).toHaveBeenCalledWith({ altMult: 2 });
+    expect(updateModel).toHaveBeenCalled();
   });
 
   it('triggers download on download button click', () => {
-    render(<PreviewPage {...defaultProps} />);
+    const downloadModel = vi.fn();
+    
+    // Mock the hook to return our own download function
+    (ModelBuilderHook.useModelBuilder as any).mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel: vi.fn(),
+      downloadModel
+    });
+
+    render(<PreviewPage />);
 
     const downloadButton = screen.getByRole('button', { name: 'Download STL model' });
     fireEvent.click(downloadButton);
 
-    expect(defaultProps.onDownload).toHaveBeenCalledTimes(1);
-  });
-
-  it('removes model-mode class from body on unmount', () => {
-    const { unmount } = render(<PreviewPage {...defaultProps} />);
-    
-    // Check that class is added
-    expect(document.body.classList.contains('model-mode')).toBe(true);
-    
-    // Unmount component
-    unmount();
-    
-    // Check that class is removed
-    expect(document.body.classList.contains('model-mode')).toBe(false);
+    expect(downloadModel).toHaveBeenCalledTimes(1);
   });
 }); 

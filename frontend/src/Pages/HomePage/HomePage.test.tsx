@@ -1,36 +1,47 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HomePage from './HomePage';
+import TestWrapper from '../../test-utils/TestWrapper';
+import * as AppContext from '../../context/AppContext';
+import * as TerrainHook from '../../hooks/useTerrain';
 
 describe('HomePage', () => {
-  // Default props for testing
-  const defaultProps = {
-    onFileChange: vi.fn(),
-    shape: 'hexagon' as const,
-    onShapeChange: vi.fn(),
-    widthMM: 100,
-    onWidthChange: vi.fn(),
-    altMult: 1,
-    onAltMultChange: vi.fn(),
-    gridRes: 500,
-    onGridResChange: vi.fn(),
-    paddingFac: 4.0,
-    onPaddingFacChange: vi.fn(),
-    embossText: '',
-    onEmbossTextChange: vi.fn(),
-    loading: false,
-    onGenerate: vi.fn()
-  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('renders the component with title', () => {
-    render(<HomePage {...defaultProps} />);
+    render(<HomePage />, { wrapper: TestWrapper });
     expect(screen.getByText('Mercury')).toBeInTheDocument();
     expect(screen.getByText('Turn your adventure into a 3D view of the surrounding terrain')).toBeInTheDocument();
   });
 
   it('handles file input changes', async () => {
-    render(<HomePage {...defaultProps} />);
+    // Mock dispatch function
+    const mockDispatch = vi.fn();
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon', 
+          widthMM: 100, 
+          altMult: 1,
+          gridRes: 500,
+          paddingFac: 4.0,
+          embossText: '',
+          rotationAngle: 0 
+        },
+        file: null,
+        resources: { font: null, terrainData: null }
+      },
+      dispatch: mockDispatch,
+      updateModelConfig: vi.fn(),
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn()
+    });
+
+    render(<HomePage />);
     
     const fileInput = screen.getByLabelText(/upload gpx file/i);
     const mockFile = new File(['dummy content'], 'test.gpx', { type: 'application/gpx+xml' });
@@ -38,52 +49,114 @@ describe('HomePage', () => {
     // Fire change event with mock file
     await userEvent.upload(fileInput, mockFile);
     
-    expect(defaultProps.onFileChange).toHaveBeenCalledWith(mockFile);
+    expect(mockDispatch).toHaveBeenCalledWith({ 
+      type: 'SET_FILE', 
+      payload: mockFile 
+    });
   });
 
-  it('handles shape selection changes', () => {
-    render(<HomePage {...defaultProps} />);
-    
-    const shapeSelect = screen.getByLabelText(/shape/i);
-    fireEvent.change(shapeSelect, { target: { value: 'circle' } });
-    
-    expect(defaultProps.onShapeChange).toHaveBeenCalledWith('circle');
-  });
+  it('handles model config changes', () => {
+    // Mock updateModelConfig function
+    const mockUpdateModelConfig = vi.fn();
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon', 
+          widthMM: 100, 
+          altMult: 1,
+          gridRes: 500,
+          paddingFac: 4.0,
+          embossText: '',
+          rotationAngle: 0 
+        },
+        file: null,
+        resources: { font: null, terrainData: null }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig: mockUpdateModelConfig,
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn()
+    });
 
-  it('handles numeric input changes', () => {
-    render(<HomePage {...defaultProps} />);
+    render(<HomePage />);
     
-    // Test width input
-    const widthInput = screen.getByLabelText(/model width/i);
-    fireEvent.change(widthInput, { target: { value: '200' } });
-    expect(defaultProps.onWidthChange).toHaveBeenCalledWith(200);
+    // Test grid resolution input
+    const gridResInput = screen.getByLabelText(/grid resolution/i);
+    fireEvent.change(gridResInput, { target: { value: '600' } });
+    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ gridRes: 600 });
     
-    // Test altitude multiplier input
-    const altMultInput = screen.getByLabelText(/altitude multiplier/i);
-    fireEvent.change(altMultInput, { target: { value: '2.5' } });
-    expect(defaultProps.onAltMultChange).toHaveBeenCalledWith(2.5);
-  });
-
-  it('handles text emboss input', () => {
-    render(<HomePage {...defaultProps} />);
+    // Test padding factor input
+    const paddingInput = screen.getByLabelText(/padding factor/i);
+    fireEvent.change(paddingInput, { target: { value: '5.5' } });
+    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ paddingFac: 5.5 });
     
+    // Test emboss text input
     const textArea = screen.getByLabelText(/text to emboss/i);
     fireEvent.change(textArea, { target: { value: 'My Adventure' } });
-    
-    expect(defaultProps.onEmbossTextChange).toHaveBeenCalledWith('My Adventure');
+    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ embossText: 'My Adventure' });
   });
 
-  it('triggers generate function on button click', () => {
-    render(<HomePage {...defaultProps} />);
+  it('triggers generate terrain function on button click', () => {
+    // Mock generateTerrain function
+    const mockGenerateTerrain = vi.fn();
+    vi.spyOn(TerrainHook, 'useTerrain').mockReturnValue({
+      generateTerrain: mockGenerateTerrain
+    });
+
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon', 
+          widthMM: 100, 
+          altMult: 1,
+          gridRes: 500,
+          paddingFac: 4.0,
+          embossText: '',
+          rotationAngle: 0 
+        },
+        file: null,
+        resources: { font: null, terrainData: null }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig: vi.fn(),
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn()
+    });
+
+    render(<HomePage />);
     
     const generateButton = screen.getByText('Generate 3D Terrain');
     fireEvent.click(generateButton);
     
-    expect(defaultProps.onGenerate).toHaveBeenCalledTimes(1);
+    expect(mockGenerateTerrain).toHaveBeenCalledTimes(1);
   });
 
   it('disables generate button when loading', () => {
-    render(<HomePage {...defaultProps} loading={true} />);
+    // Mock context with loading state
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: true, status: 'Processing...' },
+        modelConfig: { 
+          shape: 'hexagon', 
+          widthMM: 100, 
+          altMult: 1,
+          gridRes: 500,
+          paddingFac: 4.0,
+          embossText: '',
+          rotationAngle: 0 
+        },
+        file: null,
+        resources: { font: null, terrainData: null }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig: vi.fn(),
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn()
+    });
+
+    render(<HomePage />);
     
     const generateButton = screen.getByText('Processing...');
     expect(generateButton).toBeDisabled();

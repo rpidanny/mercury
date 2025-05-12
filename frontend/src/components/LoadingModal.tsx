@@ -1,16 +1,62 @@
+import { useEffect, useState, useRef } from 'react';
+import './LoadingModal.css';
+
 interface LoadingModalProps {
   message?: string | null;
 }
 
 export default function LoadingModal({ message }: LoadingModalProps) {
+  const [isExtendedLoading, setIsExtendedLoading] = useState(false);
+  const loadingTimerRef = useRef<number | null>(null);
+  
+  // Add/remove body scroll lock when modal is shown
+  useEffect(() => {
+    if (message) {
+      document.body.classList.add('overflow-hidden');
+      
+      // Set extended loading state after 15 seconds
+      loadingTimerRef.current = window.setTimeout(() => {
+        setIsExtendedLoading(true);
+      }, 15000);
+    } else {
+      document.body.classList.remove('overflow-hidden');
+      setIsExtendedLoading(false);
+      
+      // Clear timeout if loading is finished
+      if (loadingTimerRef.current !== null) {
+        clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+      }
+    }
+    
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+      
+      // Clear timeout on unmount
+      if (loadingTimerRef.current !== null) {
+        clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+      }
+    };
+  }, [message]);
+
+  if (!message) return null;
+  
   return (
-    <div
-      className={`fixed inset-0 flex flex-col items-center justify-center z-50 bg-white bg-opacity-10 transition-opacity duration-300 ease-in-out ${
-        message ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}
-    >
-      <div id="loading-indicator" />
-      {message && <p className="mt-4 text-gray-800 text-lg font-medium">{message}</p>}
+    <div className={`loading-modal ${isExtendedLoading ? 'extended-loading' : ''}`}>
+      <div className="loading-content">
+        <div className="loading-spinner">
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
+        </div>
+        <p className="loading-message">{message}</p>
+        {isExtendedLoading && (
+          <p className="loading-extended-message">
+            This is taking longer than expected...
+          </p>
+        )}
+      </div>
     </div>
   );
 } 

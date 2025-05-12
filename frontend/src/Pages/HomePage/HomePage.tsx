@@ -1,42 +1,15 @@
-import { ShapeType } from '../../lib/types';
+import { useAppContext } from '../../context/AppContext';
+import { useTerrain } from '../../hooks/useTerrain';
 import { FullFormControls } from '../../components/FormControls';
 import './HomePage.css';
 
-interface HomePageProps {
-  onFileChange: (file: File | null) => void;
-  shape: ShapeType;
-  onShapeChange: (shape: ShapeType) => void;
-  widthMM: number;
-  onWidthChange: (v: number) => void;
-  altMult: number;
-  onAltMultChange: (v: number) => void;
-  gridRes: number;
-  onGridResChange: (v: number) => void;
-  paddingFac: number;
-  onPaddingFacChange: (v: number) => void;
-  embossText: string;
-  onEmbossTextChange: (text: string) => void;
-  loading: boolean;
-  onGenerate: () => void;
-}
+export default function HomePage() {
+  const { state, dispatch, updateModelConfig } = useAppContext();
+  const { ui, modelConfig } = state;
+  const { loading } = ui;
+  const { shape, widthMM, altMult, gridRes, paddingFac, embossText } = modelConfig;
+  const { generateTerrain } = useTerrain();
 
-export default function HomePage({
-  onFileChange,
-  shape,
-  onShapeChange,
-  widthMM,
-  onWidthChange,
-  altMult,
-  onAltMultChange,
-  gridRes,
-  onGridResChange,
-  paddingFac,
-  onPaddingFacChange,
-  embossText,
-  onEmbossTextChange,
-  loading,
-  onGenerate,
-}: HomePageProps) {
   return (
     <div
       id="form-container"
@@ -57,18 +30,18 @@ export default function HomePage({
           type="file"
           accept=".gpx"
           id="gpx"
-          onChange={e => onFileChange(e.target.files?.[0] ?? null)}
+          onChange={e => dispatch({ type: 'SET_FILE', payload: e.target.files?.[0] ?? null })}
           className="mt-2 w-full bg-transparent border-b border-gray-300 text-gray-900 placeholder-gray-400 focus:border-pink-500 focus:outline-none py-2 px-1 transition"
         />
       </div>
 
       <FullFormControls
         shape={shape}
-        onShapeChange={onShapeChange}
+        onShapeChange={(shape) => updateModelConfig({ shape })}
         widthMM={widthMM}
-        onWidthChange={onWidthChange}
+        onWidthChange={(widthMM) => updateModelConfig({ widthMM })}
         altMult={altMult}
-        onAltMultChange={onAltMultChange}
+        onAltMultChange={(altMult) => updateModelConfig({ altMult })}
       />
 
       <div className="mb-6">
@@ -79,7 +52,7 @@ export default function HomePage({
           type="number"
           id="gridRes"
           value={gridRes}
-          onChange={e => onGridResChange(+e.target.value)}
+          onChange={e => updateModelConfig({ gridRes: +e.target.value })}
           min={1}
           className="mt-2 w-full bg-transparent border-b border-gray-300 text-gray-900 focus:border-pink-500 focus:outline-none py-2 px-1 transition"
         />
@@ -93,7 +66,7 @@ export default function HomePage({
           type="number"
           id="paddingFac"
           value={paddingFac}
-          onChange={e => onPaddingFacChange(+e.target.value)}
+          onChange={e => updateModelConfig({ paddingFac: +e.target.value })}
           min={1}
           step={0.05}
           className="mt-2 w-full bg-transparent border-b border-gray-300 text-gray-900 focus:border-pink-500 focus:outline-none py-2 px-1 transition"
@@ -107,7 +80,7 @@ export default function HomePage({
         <textarea
           id="embossText"
           value={embossText}
-          onChange={e => onEmbossTextChange(e.target.value)}
+          onChange={e => updateModelConfig({ embossText: e.target.value })}
           rows={2}
           maxLength={50}
           className="mt-2 w-full bg-transparent border-b border-gray-300 text-gray-900 placeholder-gray-400 focus:border-pink-500 focus:outline-none py-2 px-1 rounded-md transition resize-none"
@@ -115,14 +88,12 @@ export default function HomePage({
       </div>
 
       <button
-        onClick={onGenerate}
+        onClick={generateTerrain}
         disabled={loading}
         className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-semibold py-3 rounded-full shadow-lg transition duration-300 disabled:opacity-50"
       >
         {loading ? 'Processing...' : 'Generate 3D Terrain'}
       </button>
-
-      {/* status messages moved to LoadingModal */}
     </div>
   );
 } 
