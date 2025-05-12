@@ -4,6 +4,7 @@ Elevation service for querying digital surface model (DSM) data.
 
 from typing import Optional, List, Tuple, Dict, Any, Protocol, Union
 import logging
+import numpy as np
 import rasterio
 from rasterio.windows import from_bounds
 from rasterio.enums import Resampling
@@ -105,14 +106,13 @@ class ElevationService:
             return None
 
     def get_elevation_grid(
-        self, lat_vals: List[float], lon_vals: List[float], resolution: int
+        self, bounds: Dict[str, float], resolution: int
     ) -> Tuple[List[Dict[str, Any]], int, int]:
         """
-        Generate a grid of elevations from lists of latitudes and longitudes.
+        Generate a grid of elevations for a rectangular geographic region.
 
         Args:
-            lat_vals: List of latitude values
-            lon_vals: List of longitude values
+            bounds: Dictionary with min_latitude, min_longitude, max_latitude, max_longitude
             resolution: Grid resolution (number of points in each dimension)
 
         Returns:
@@ -124,21 +124,22 @@ class ElevationService:
         Raises:
             Exception: If an error occurs during grid generation
         """
-        results = []
-
         try:
+            min_lat = bounds["min_latitude"]
+            min_lon = bounds["min_longitude"]
+            max_lat = bounds["max_latitude"]
+            max_lon = bounds["max_longitude"]
+
+            # Create evenly spaced latitude and longitude values
+            lat_vals = np.linspace(min_lat, max_lat, resolution).tolist()
+            lon_vals = np.linspace(min_lon, max_lon, resolution).tolist()
+
             dataset = self._get_dataset()
 
             # Define a window within the dataset
-            window = from_bounds(
-                min(lon_vals),
-                min(lat_vals),
-                max(lon_vals),
-                max(lat_vals),
-                dataset.transform,
-            )
+            window = from_bounds(min_lon, min_lat, max_lon, max_lat, dataset.transform)
 
-            # Read the elevation data in the window
+            # Read the elevation data in the window at once
             elev_array = dataset.read(
                 1,
                 window=window,
@@ -147,13 +148,20 @@ class ElevationService:
                 boundless=True,
             )
 
-            # Build the result grid
+            # No-data value for checking later
+            nodata = dataset.nodata
+
+            # Pre-allocate results array for better performance
+            results = []
+
+            # Build the result grid more efficiently with fewer function calls
             for i, lat in enumerate(lat_vals):
+                row = resolution - i - 1  # Invert row index to match lat orientation
                 for j, lon in enumerate(lon_vals):
-                    row = resolution - i - 1
-                    col = j
-                    val = elev_array[row][col]
-                    elevation = None if self._is_nodata(dataset, val) else float(val)
+                    val = elev_array[row][j]
+                    elevation = (
+                        None if (nodata is not None and val == nodata) else float(val)
+                    )
                     results.append(
                         {"latitude": lat, "longitude": lon, "elevation": elevation}
                     )
