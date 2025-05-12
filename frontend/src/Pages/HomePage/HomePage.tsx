@@ -101,13 +101,13 @@ export default function HomePage() {
       <section className="preview-section">
         <div className="preview-overlay">
           <div className="preview-text">
-            <div className="preview-badge">Example</div>
+            <div className="preview-badge">Featured</div>
             <h3 className="text-slate-800 text-lg font-bold mb-1">Pokhara Marathon</h3>
-            <p className="text-slate-600 text-xs">3D terrain model generated from a GPX route track</p>
+            <p className="text-slate-600 text-xs">Breathtaking 3D terrain model showcasing the scenic Pokhara Marathon 2025 route</p>
           </div>
           
           <div className="model-preview">
-            <img src="pokhara-model.jpg" alt="3D Terrain Model Example" />
+            <img src="/pokhara-model.jpg" alt="3D Terrain Model Example" />
           </div>
         </div>
       </section>
