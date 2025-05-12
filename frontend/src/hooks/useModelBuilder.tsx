@@ -100,8 +100,13 @@ export const useModelBuilder = () => {
   }, [setLoading]);
 
   // Handle download functionality
-  const downloadModel = useCallback(() => {
+  const downloadModel = useCallback(async () => {
     if (!localMesh) return;
+
+    setLoading(true, 'Compacting 3D model...');
+
+    // Add a small delay to ensure loading state is applied in the UI
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const exporter = new STLExporter();
     const stlString = exporter.parse(localMesh);
@@ -109,10 +114,26 @@ export const useModelBuilder = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'model.stl';
+    
+    // Get the original filename from the GPX file
+    const originalFileName = state.file?.name.replace(/\.[^/.]+$/, '') || 'model';
+    
+    // Get render configs
+    const { gridRes, paddingFac } = modelConfig;
+    
+    // Create timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    
+    // Construct the filename with configs and timestamp
+    a.download = `${originalFileName}_res${gridRes}_pad${paddingFac}_${timestamp}.stl`;
+    
     a.click();
     URL.revokeObjectURL(url);
-  }, [localMesh]);
+
+    // Add delay before removing loading state
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setLoading(false);
+  }, [localMesh, state.file, modelConfig, setLoading]);
 
   return {
     localMesh,
