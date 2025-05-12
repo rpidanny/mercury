@@ -150,7 +150,9 @@ class ElevationService:
             # Build the result grid
             for i, lat in enumerate(lat_vals):
                 for j, lon in enumerate(lon_vals):
-                    val = elev_array[i][j]
+                    row = resolution - i - 1
+                    col = j
+                    val = elev_array[row][col]
                     elevation = None if self._is_nodata(dataset, val) else float(val)
                     results.append(
                         {"latitude": lat, "longitude": lon, "elevation": elevation}
