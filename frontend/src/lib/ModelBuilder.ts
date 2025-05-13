@@ -493,7 +493,7 @@ export default class ModelBuilder {
         depth: height,
         bevelEnabled: false,
       });
-      platformGeo.translate(0, yCenter, this.baseZ);
+      platformGeo.translate(0, yCenter, this.baseZ + 2);
 
       // Create text geometry
       textGeo = new TextGeometry(embossText, {
@@ -503,6 +503,23 @@ export default class ModelBuilder {
         curveSegments: 4,
       });
       textGeo.computeBoundingBox();
+
+      // Center and position the text on top of the platform
+      if (textGeo.boundingBox) {
+        const textWidth = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
+        const textHeight =
+          textGeo.boundingBox.max.y - textGeo.boundingBox.min.y;
+
+        // Center horizontally
+        textGeo.translate(-textWidth / 2, 0, 0);
+
+        // Position on top of platform
+        textGeo.translate(
+          0,
+          yCenter - textHeight / 2,
+          this.baseZ + 2 + height // +2 to offset the platform offset
+        );
+      }
     }
 
     return { platformGeo, textGeo, textOverlapWarning };
