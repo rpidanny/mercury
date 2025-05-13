@@ -14,7 +14,7 @@ describe('HomePage', () => {
   it('renders the component with title', () => {
     render(<HomePage />, { wrapper: TestWrapper });
     expect(screen.getByText('Mercury')).toBeInTheDocument();
-    expect(screen.getByText('Turn your adventure into a 3D view of the surrounding terrain')).toBeInTheDocument();
+    expect(screen.getByText('Transform your adventure into stunning 3D terrain')).toBeInTheDocument();
   });
 
   it('handles file input changes', async () => {
@@ -43,7 +43,7 @@ describe('HomePage', () => {
 
     render(<HomePage />);
     
-    const fileInput = screen.getByLabelText(/upload gpx file/i);
+    const fileInput = screen.getByLabelText(/adventure track/i);
     const mockFile = new File(['dummy content'], 'test.gpx', { type: 'application/gpx+xml' });
     
     // Fire change event with mock file
@@ -82,17 +82,17 @@ describe('HomePage', () => {
     render(<HomePage />);
     
     // Test grid resolution input
-    const gridResInput = screen.getByLabelText(/grid resolution/i);
+    const gridResInput = screen.getByLabelText(/detail level/i);
     fireEvent.change(gridResInput, { target: { value: '600' } });
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ gridRes: 600 });
     
     // Test padding factor input
-    const paddingInput = screen.getByLabelText(/padding factor/i);
+    const paddingInput = screen.getByLabelText(/padding multiplier/i);
     fireEvent.change(paddingInput, { target: { value: '5.5' } });
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ paddingFac: 5.5 });
     
     // Test emboss text input
-    const textArea = screen.getByLabelText(/text to emboss/i);
+    const textArea = screen.getByLabelText(/personalize your model/i);
     fireEvent.change(textArea, { target: { value: 'My Adventure' } });
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ embossText: 'My Adventure' });
   });
@@ -137,7 +137,7 @@ describe('HomePage', () => {
     // Mock context with loading state
     vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
       state: {
-        ui: { loading: true, status: 'Processing...' },
+        ui: { loading: true, status: 'Creating Your Model...' },
         modelConfig: { 
           shape: 'hexagon', 
           widthMM: 100, 
@@ -158,7 +158,7 @@ describe('HomePage', () => {
 
     render(<HomePage />);
     
-    const generateButton = screen.getByText('Processing...');
+    const generateButton = screen.getByText('Creating Your Model...');
     expect(generateButton).toBeDisabled();
   });
 }); 

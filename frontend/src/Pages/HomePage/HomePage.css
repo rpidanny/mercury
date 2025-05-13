@@ -137,7 +137,7 @@ body {
   padding: 1.75rem;
   background-color: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
+  border-radius: 1.25rem;
   box-shadow: 0 10px 30px rgba(148, 163, 184, 0.15),
     0 2px 6px rgba(148, 163, 184, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.5) inset;
@@ -148,26 +148,31 @@ body {
 .input-field {
   background-color: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(203, 213, 225, 0.8);
-  border-radius: 8px;
+  border-radius: 0.75rem;
   transition: all 0.3s ease;
   color: #334155;
-  padding: 0.65rem 0.85rem !important;
+  padding: 0.75rem 1rem !important;
   font-size: 0.9rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .input-field:focus {
   border-color: rgba(99, 102, 241, 0.8);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  background-color: rgba(255, 255, 255, 0.95);
 }
 
 .input-field::placeholder {
   color: #94a3b8;
+  opacity: 0.8;
 }
 
 #form-container label {
   font-size: 0.85rem;
   margin-bottom: 0.3rem !important;
   font-weight: 500;
+  color: #475569;
+  letter-spacing: 0.02em;
 }
 
 .gradient-text {
@@ -188,8 +193,9 @@ body {
   overflow: hidden;
   position: relative;
   font-size: 0.9rem;
-  padding: 0.75rem 1.25rem !important;
-  border-radius: 10px !important;
+  padding: 0.85rem 1.5rem !important;
+  border-radius: 1rem !important;
+  letter-spacing: 0.02em;
 }
 
 .primary-button:hover:not(:disabled) {

@@ -44,7 +44,7 @@ gdalbuildvrt data/geo_AW3D30.vrt data/netherlands_AW3D30.tif data/nepal_AW3D30.t
 
 ```bash
 # Start both frontend and backend services in production mode
-docker compose up
+docker-compose up
 ```
 
 Once running, access the application at [http://localhost](http://localhost).
@@ -55,23 +55,10 @@ For development with hot-reloading enabled:
 
 ```bash
 # Start services in development mode
-docker compose -f docker-compose.dev.yml up
+docker-compose -f docker-compose.dev.yml up
 ```
 
 This will run both the frontend and backend services with full watch mode support, making development faster by automatically reloading changes. Access the development server at [http://localhost:5173](http://localhost:5173).
-
-### Creating a 3D Model
-
-1. Upload your GPX file
-2. Select your desired shape (hexagon, square, or circle)
-3. Adjust model parameters:
-   - Width (mm) - Physical size of your 3D print
-   - Altitude Multiplier - Exaggerate or reduce height differences
-   - Grid Resolution - Detail level of terrain (higher = more detailed)
-   - Padding Factor - Amount of terrain surrounding your route
-4. Add optional embossed text
-5. Click "Generate 3D Terrain"
-6. Preview your 3D model and download the STL file
 
 ## 🤝 Contributing
 

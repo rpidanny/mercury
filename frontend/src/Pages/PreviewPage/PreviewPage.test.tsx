@@ -222,6 +222,9 @@ describe('PreviewPage', () => {
     const altToolbarBtn = screen.getByTitle('Adjust altitude');
     fireEvent.click(altToolbarBtn);
 
+    // Find the Altitude Multiplier label
+    expect(screen.getByText('Altitude Multiplier')).toBeInTheDocument();
+
     // Find and change the altitude slider
     const altSlider = screen.getByRole('slider', { name: 'Adjust altitude multiplier' });
     fireEvent.change(altSlider, { target: { value: '2.0' } });
