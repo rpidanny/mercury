@@ -31,4 +31,4 @@ USER appuser
 EXPOSE 8848
 
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8848", "--workers", "8", "--timeout", "120", "app.app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8848", "--workers", "4", "--timeout", "300", "--max-requests", "20", "--max-requests-jitter", "5", "app.app:app"]

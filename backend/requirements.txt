@@ -5,3 +5,4 @@ gunicorn==23.0.0
 numpy==1.26.3
 pydantic==2.11.4
 numpy-stl==3.1.0
+psutil==5.9.8
