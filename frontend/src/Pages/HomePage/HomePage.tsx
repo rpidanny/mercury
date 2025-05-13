@@ -18,12 +18,12 @@ export default function HomePage() {
             Mercury
           </h1>
           <h3 className="text-center text-slate-600 mb-6 font-light text-sm">
-            Turn your adventure into a 3D view of the surrounding terrain
+            Transform your adventure into stunning 3D terrain
           </h3>
 
           <div className="mb-5">
             <label htmlFor="gpx" className="block text-sm font-medium text-slate-700 mb-1.5">
-              Upload GPX File
+              Adventure Track
             </label>
             <input
               type="file"
@@ -31,7 +31,9 @@ export default function HomePage() {
               id="gpx"
               onChange={e => dispatch({ type: 'SET_FILE', payload: e.target.files?.[0] ?? null })}
               className="input-field w-full focus:outline-none"
+              placeholder="Select your GPX track file"
             />
+            <p className="text-xs text-slate-500 mt-1">Upload a .gpx file from your hike, run, or bike ride</p>
           </div>
 
           <FullFormControls
@@ -46,7 +48,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
               <label htmlFor="gridRes" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Grid Resolution
+                Detail Level
               </label>
               <input
                 type="number"
@@ -56,10 +58,11 @@ export default function HomePage() {
                 min={1}
                 className="input-field w-full focus:outline-none"
               />
+              <p className="text-xs text-slate-500 mt-1">Higher values increase model detail</p>
             </div>
             <div>
               <label htmlFor="paddingFac" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Padding Factor
+                Padding Multiplier
               </label>
               <input
                 type="number"
@@ -70,12 +73,13 @@ export default function HomePage() {
                 step={0.05}
                 className="input-field w-full focus:outline-none"
               />
+              <p className="text-xs text-slate-500 mt-1">Multiplier that determines padding around the GPX path</p>
             </div>
           </div>
 
           <div className="mb-6">
             <label htmlFor="embossText" className="block text-sm font-medium text-slate-700 mb-1.5">
-              Text to Emboss (Optional)
+              Personalize Your Model
             </label>
             <textarea
               id="embossText"
@@ -84,8 +88,9 @@ export default function HomePage() {
               rows={2}
               maxLength={50}
               className="input-field w-full focus:outline-none resize-none"
-              placeholder="Your adventure name or date..."
+              placeholder="Add name, date, or achievement..."
             />
+            <p className="text-xs text-slate-500 mt-1">Text will be embossed on your 3D model</p>
           </div>
 
           <button
@@ -93,7 +98,7 @@ export default function HomePage() {
             disabled={loading}
             className="primary-button w-full text-white font-semibold rounded-full disabled:opacity-50"
           >
-            {loading ? 'Processing...' : 'Generate 3D Terrain'}
+            {loading ? 'Creating Your Model...' : 'Generate 3D Terrain'}
           </button>
         </div>
       </section>
