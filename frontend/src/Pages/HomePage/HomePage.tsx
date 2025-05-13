@@ -7,7 +7,7 @@ export default function HomePage() {
   const { state, dispatch, updateModelConfig } = useAppContext();
   const { ui, modelConfig } = state;
   const { loading } = ui;
-  const { shape, widthMM, altMult, gridRes, paddingFac, embossText } = modelConfig;
+  const { shape, widthMM, altMult, gridRes, coverageFactor: coverageFactor, embossText } = modelConfig;
   const { generateTerrain } = useTerrain();
 
   return (
@@ -61,19 +61,19 @@ export default function HomePage() {
               <p className="text-xs text-slate-500 mt-1">Higher values increase model detail</p>
             </div>
             <div>
-              <label htmlFor="paddingFac" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Padding Multiplier
+              <label htmlFor="coverageFactor" className="block text-sm font-medium text-slate-700 mb-1.5">
+                Coverage Factor
               </label>
               <input
                 type="number"
-                id="paddingFac"
-                value={paddingFac}
-                onChange={e => updateModelConfig({ paddingFac: +e.target.value })}
+                id="coverageFactor"
+                value={coverageFactor}
+                onChange={e => updateModelConfig({ coverageFactor: +e.target.value })}
                 min={1}
                 step={0.05}
                 className="input-field w-full focus:outline-none"
               />
-              <p className="text-xs text-slate-500 mt-1">Multiplier that determines padding around the GPX path</p>
+              <p className="text-xs text-slate-500 mt-1">Determines how much surrounding terrain is included in your model</p>
             </div>
           </div>
 

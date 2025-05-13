@@ -307,20 +307,20 @@ describe("TerrainGenerator", () => {
     expect(result.grid[0].length).toBeLessThanOrEqual(gridRes + 2);
   });
 
-  it("applies padding factor correctly", async () => {
-    // Test with two different padding factors
+  it("applies coverage factor correctly", async () => {
+    // Test with two different coverage factors
     const gridRes = 50;
-    const smallPadding = 1.0;
-    const largePadding = 4.0;
+    const smallCoverage = 1.0;
+    const largeCoverage = 4.0;
 
-    // Override the generate function to return different bounds for different padding
+    // Override the generate function to return different bounds for different coverage factors
     const originalGenerateTemp = TerrainGenerator.generate;
     TerrainGenerator.generate = vi
       .fn()
       .mockImplementationOnce(
         async () =>
           ({
-            // Small padding result
+            // Small coverage result
             grid: [[10]],
             bounds: {
               min: { x: -10, y: -10 },
@@ -343,7 +343,7 @@ describe("TerrainGenerator", () => {
       .mockImplementationOnce(
         async () =>
           ({
-            // Large padding result
+            // Large coverage result
             grid: [[10]],
             bounds: {
               min: { x: -40, y: -40 },
@@ -367,7 +367,7 @@ describe("TerrainGenerator", () => {
     const resultSmall = (await TerrainGenerator.generate(
       mockPoints,
       gridRes,
-      smallPadding
+      smallCoverage
     )) as TerrainData & {
       grid: number[][];
       bounds: { min: { x: number; y: number }; max: { x: number; y: number } };
@@ -375,19 +375,19 @@ describe("TerrainGenerator", () => {
     const resultLarge = (await TerrainGenerator.generate(
       mockPoints,
       gridRes,
-      largePadding
+      largeCoverage
     )) as TerrainData & {
       grid: number[][];
       bounds: { min: { x: number; y: number }; max: { x: number; y: number } };
     };
 
-    // With larger padding, the bounds should be larger
+    // With larger coverage, the bounds should be larger
     const smallWidth = resultSmall.bounds.max.x - resultSmall.bounds.min.x;
     const largeWidth = resultLarge.bounds.max.x - resultLarge.bounds.min.x;
     const smallHeight = resultSmall.bounds.max.y - resultSmall.bounds.min.y;
     const largeHeight = resultLarge.bounds.max.y - resultLarge.bounds.min.y;
 
-    // Larger padding should result in a larger terrain size
+    // Larger coverage should result in a larger terrain size
     expect(largeWidth).toBeGreaterThan(smallWidth);
     expect(largeHeight).toBeGreaterThan(smallHeight);
 
