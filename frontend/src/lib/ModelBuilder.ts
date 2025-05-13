@@ -67,6 +67,8 @@ export default class ModelBuilder {
   private rotationAngle = 0;
   private rotationMatrix = new THREE.Matrix4();
   private rotationMatrixInverse = new THREE.Matrix4();
+  // The maximum number of grid points to process before simplification
+  private static MAX_POINTS_THRESHOLD = 10000;
 
   private constructor() {}
 
@@ -146,6 +148,14 @@ export default class ModelBuilder {
     // Filter and scale grid points
     this.scaledPoints = this.filterAndScalePoints();
 
+    // If we have too many points, simplify the dataset
+    if (
+      this.scaledPoints.length > Config.MAX_POINTS_THRESHOLD ||
+      Config.PERFORMANCE_MODE
+    ) {
+      this.simplifyPoints();
+    }
+
     // Create track points
     this.trackPoints3D = this.createTrackPoints();
 
@@ -166,6 +176,128 @@ export default class ModelBuilder {
     }
 
     this.baseZ = this.terrainMinZ - Config.BASE_THICKNESS_MM;
+  }
+
+  /**
+   * Simplifies the point set by using a grid-based approach to reduce the number of points
+   * while preserving terrain features.
+   */
+  private simplifyPoints(): void {
+    if (this.scaledPoints.length <= 1) return;
+
+    console.log(
+      `Simplifying mesh: reducing from ${this.scaledPoints.length} points`
+    );
+
+    // Find bounds
+    let minX = this.scaledPoints[0].x;
+    let maxX = this.scaledPoints[0].x;
+    let minY = this.scaledPoints[0].y;
+    let maxY = this.scaledPoints[0].y;
+
+    for (const pt of this.scaledPoints) {
+      minX = Math.min(minX, pt.x);
+      maxX = Math.max(maxX, pt.x);
+      minY = Math.min(minY, pt.y);
+      maxY = Math.max(maxY, pt.y);
+    }
+
+    // Calculate grid dimensions - aim for target number of cells
+    // Use a smaller target number in performance mode
+    const targetCells = Config.PERFORMANCE_MODE
+      ? Math.min(
+          Config.SIMPLIFY_TARGET_POINTS / 2,
+          this.scaledPoints.length / 4
+        )
+      : Math.min(Config.SIMPLIFY_TARGET_POINTS, this.scaledPoints.length / 2);
+
+    const gridWidth = maxX - minX;
+    const gridHeight = maxY - minY;
+    const aspectRatio = gridWidth / gridHeight;
+    const gridCols = Math.floor(Math.sqrt(targetCells * aspectRatio));
+    const gridRows = Math.floor(targetCells / gridCols);
+
+    const cellWidth = gridWidth / gridCols;
+    const cellHeight = gridHeight / gridRows;
+
+    // Create grid buckets
+    const grid: Map<string, ScaledPoint[]> = new Map();
+
+    // Place points in grid buckets
+    for (const pt of this.scaledPoints) {
+      const col = Math.floor((pt.x - minX) / cellWidth);
+      const row = Math.floor((pt.y - minY) / cellHeight);
+      const key = `${col},${row}`;
+
+      if (!grid.has(key)) {
+        grid.set(key, []);
+      }
+      grid.get(key)!.push(pt);
+    }
+
+    // For each non-empty cell, pick representative point
+    // Prefer points that are elevational extremes
+    const simplified: ScaledPoint[] = [];
+
+    for (const [, points] of grid) {
+      if (points.length === 0) continue;
+      if (points.length === 1) {
+        simplified.push(points[0]);
+        continue;
+      }
+
+      // Find min, max, and middle elevation points in this cell
+      let minZPoint = points[0];
+      let maxZPoint = points[0];
+
+      for (const pt of points) {
+        if (pt.z < minZPoint.z) minZPoint = pt;
+        if (pt.z > maxZPoint.z) maxZPoint = pt;
+      }
+
+      // Always keep extremes if they differ significantly
+      const zDiff = maxZPoint.z - minZPoint.z;
+
+      // Use more aggressive simplification in performance mode
+      const zThreshold = Config.PERFORMANCE_MODE ? 2.0 : 1.0;
+      const highChangeThreshold = Config.PERFORMANCE_MODE ? 10.0 : 5.0;
+
+      if (zDiff > zThreshold) {
+        simplified.push(minZPoint);
+        simplified.push(maxZPoint);
+
+        // If the cell has significant elevation change, add a middle point too
+        // Skip in performance mode to save memory
+        if (
+          !Config.PERFORMANCE_MODE &&
+          zDiff > highChangeThreshold &&
+          points.length > 3
+        ) {
+          // Find a point near middle elevation
+          const midZ = (minZPoint.z + maxZPoint.z) / 2;
+          let midZPoint = points[0];
+          let minDiff = Math.abs(midZPoint.z - midZ);
+
+          for (let i = 1; i < points.length; i++) {
+            const diff = Math.abs(points[i].z - midZ);
+            if (diff < minDiff) {
+              midZPoint = points[i];
+              minDiff = diff;
+            }
+          }
+
+          if (midZPoint !== minZPoint && midZPoint !== maxZPoint) {
+            simplified.push(midZPoint);
+          }
+        }
+      } else {
+        // For flat areas, just keep one point
+        simplified.push(points[0]);
+      }
+    }
+
+    console.log(`Simplified to ${simplified.length} points`);
+    this.scaledPoints = simplified;
   }
 
   private filterAndScalePoints(): ScaledPoint[] {
@@ -197,22 +329,36 @@ export default class ModelBuilder {
       throw new Error("Data must be set before creating track points");
     }
 
+    // For efficiency with large models, limit the number of track points
+    let trackPoints = this.data.trackPoints;
+    const maxPoints = Config.PERFORMANCE_MODE
+      ? Config.MAX_TRACK_POINTS / 2
+      : Config.MAX_TRACK_POINTS;
+
+    if (trackPoints.length > maxPoints) {
+      // Subsample track points
+      const step = Math.ceil(trackPoints.length / maxPoints);
+      trackPoints = trackPoints.filter(
+        (_, i) => i % step === 0 || i === trackPoints.length - 1
+      );
+    }
+
     // Create delaunay for grid points to use in interpolation
     const gridDelaunay = Delaunator.from(
       this.scaledPoints.map((pt) => [pt.x, pt.y])
     );
 
-    return this.data.trackPoints.map((p: TerrainTrackPoint) => {
+    return trackPoints.map((p: TerrainTrackPoint) => {
       const { x, y } = this.data!.geoToXY(p.lat, p.lon);
       const scaledX = x * this.scale;
       const scaledY = y * this.scale;
 
       // Find containing triangle for interpolation
-      const containingTriangle = this.findContainingTriangle(
-        scaledX,
-        scaledY,
-        gridDelaunay
-      );
+      // In performance mode, skip interpolation for some track points to save CPU
+      const shouldInterpolate = !Config.PERFORMANCE_MODE || Math.random() > 0.5;
+      const containingTriangle = shouldInterpolate
+        ? this.findContainingTriangle(scaledX, scaledY, gridDelaunay)
+        : null;
 
       // Calculate z value using interpolation or point's elevation
       let scaledZ = (p.elevation ?? 0) * this.altitudeMultiplier * this.scale;
@@ -330,12 +476,33 @@ export default class ModelBuilder {
     // Create a smooth curve through the track points
     const curve = new THREE.CatmullRomCurve3(this.trackPoints3D, false);
 
-    // Create a tube geometry around the curve
+    // Calculate appropriate segments based on number of points and performance mode
+    const segmentMultiplier = Config.PERFORMANCE_MODE
+      ? 1
+      : this.trackPoints3D.length > 100
+      ? 2
+      : 5;
+    const segments = Math.min(
+      Config.PERFORMANCE_MODE ? 200 : 500,
+      this.trackPoints3D.length * segmentMultiplier
+    );
+
+    // Create a tube geometry around the curve with adaptive detail
+    const tubularSegments = Math.min(
+      segments,
+      Config.PERFORMANCE_MODE ? 150 : 300
+    );
+    const radialSegments = Config.PERFORMANCE_MODE
+      ? Config.LOW_DETAIL_RADIAL_SEGMENTS
+      : this.trackPoints3D.length > 200
+      ? Config.LOW_DETAIL_RADIAL_SEGMENTS
+      : Config.HIGH_DETAIL_RADIAL_SEGMENTS;
+
     return new THREE.TubeGeometry(
       curve,
-      this.trackPoints3D.length * 5, // Curve segments
-      Config.PATH_RADIUS_MM, // Tube radius
-      16, // Radial segments
+      tubularSegments,
+      Config.PATH_RADIUS_MM,
+      radialSegments,
       false // Closed
     );
   }
@@ -501,12 +668,18 @@ export default class ModelBuilder {
       });
       platformGeo.translate(0, yCenter, this.baseZ + 2);
 
-      // Create text geometry
+      // Create text geometry with adaptive detail based on model size and performance mode
+      const curveSegments = Config.PERFORMANCE_MODE
+        ? Config.LOW_DETAIL_CURVE_SEGMENTS
+        : this.scaledPoints.length > 5000
+        ? Config.LOW_DETAIL_CURVE_SEGMENTS
+        : Config.HIGH_DETAIL_CURVE_SEGMENTS;
+
       textGeo = new TextGeometry(embossText, {
         font,
         size: pWidth * Config.TEXT_SIZE_FACTOR,
         depth: Config.TEXT_EMBOSS_DEPTH,
-        curveSegments: 4,
+        curveSegments: curveSegments,
       });
       textGeo.computeBoundingBox();
 
@@ -634,6 +807,12 @@ export default class ModelBuilder {
   private groupMeshes(meshes: THREE.Object3D[]): THREE.Group {
     const group = new THREE.Group();
     meshes.forEach((m) => group.add(m));
+
+    // Clean up and free memory
+    this.scaledPoints = [];
+    this.trackPoints3D = [];
+    this.delaunay = null;
+
     return group;
   }
 }

@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, ReactNode, Dispatch, useCallback
 import { ShapeType } from '../lib/types';
 import { Font } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TerrainData } from '../lib/TerrainGenerator';
+import Config from '../lib/config';
 
 type AppState = {
   file: File | null;
@@ -17,6 +18,7 @@ type AppState = {
   ui: {
     status: string;
     loading: boolean;
+    performanceMode: boolean;
   };
   resources: {
     font: Font | null;
@@ -32,7 +34,8 @@ type AppAction =
   | { type: 'SET_LOADING_WITH_STATUS', payload: { loading: boolean, status: string } }
   | { type: 'SET_FONT', payload: Font | null }
   | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
-  | { type: 'RESET_TERRAIN' };
+  | { type: 'RESET_TERRAIN' }
+  | { type: 'SET_PERFORMANCE_MODE', payload: boolean };
 
 // Initial state
 const initialState: AppState = {
@@ -48,7 +51,8 @@ const initialState: AppState = {
   },
   ui: {
     status: '',
-    loading: false
+    loading: false,
+    performanceMode: false
   },
   resources: {
     font: null,
@@ -85,6 +89,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { 
         ...state, 
         ui: { 
+          ...state.ui,
           loading: action.payload.loading, 
           status: action.payload.status 
         } 
@@ -107,6 +112,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state, 
         resources: { ...state.resources, terrainData: null } 
       };
+      
+    case 'SET_PERFORMANCE_MODE':
+      // Also update the global config
+      Config.PERFORMANCE_MODE = action.payload;
+      return {
+        ...state,
+        ui: { ...state.ui, performanceMode: action.payload }
+      };
     
     default: 
       return state;
@@ -119,6 +132,7 @@ type AppContextType = {
   updateModelConfig: (updates: Partial<AppState['modelConfig']>) => void;
   setLoading: (isLoading: boolean, message?: string) => void;
   resetTerrain: () => void;
+  setPerformanceMode: (enabled: boolean) => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -147,6 +161,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const resetTerrain = useCallback(() => {
     dispatch({ type: 'RESET_TERRAIN' });
   }, []);
+  
+  const setPerformanceMode = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_PERFORMANCE_MODE', payload: enabled });
+  }, []);
 
   return (
     <AppContext.Provider value={{ 
@@ -154,7 +172,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       dispatch, 
       updateModelConfig, 
       setLoading, 
-      resetTerrain 
+      resetTerrain,
+      setPerformanceMode
     }}>
       {children}
     </AppContext.Provider>
