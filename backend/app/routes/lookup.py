@@ -34,5 +34,5 @@ def get_elevations():
         except (TypeError, ValueError):
             continue
         elevation = elevation_service.get_point_elevation(lat, lon)
-        results.append({"latitude": lat, "longitude": lon, "elevation": elevation})
+        results.append([lat, lon, elevation])
     return jsonify({"results": results})

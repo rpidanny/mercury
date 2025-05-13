@@ -107,7 +107,7 @@ class ElevationService:
 
     def get_elevation_grid(
         self, bounds: Dict[str, float], resolution: int
-    ) -> Tuple[List[Dict[str, Any]], int, int]:
+    ) -> Tuple[List[List[Union[float, None]]], int, int]:
         """
         Generate a grid of elevations for a rectangular geographic region.
 
@@ -117,7 +117,7 @@ class ElevationService:
 
         Returns:
             Tuple containing:
-            - List of dicts with latitude, longitude, and elevation
+            - List of arrays with [latitude, longitude, elevation]
             - Grid width
             - Grid height
 
@@ -162,9 +162,7 @@ class ElevationService:
                     elevation = (
                         None if (nodata is not None and val == nodata) else float(val)
                     )
-                    results.append(
-                        {"latitude": lat, "longitude": lon, "elevation": elevation}
-                    )
+                    results.append([lat, lon, elevation])
 
             return results, resolution, resolution
 

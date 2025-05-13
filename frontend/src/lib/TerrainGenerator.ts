@@ -180,9 +180,9 @@ export default class TerrainGenerator {
       resolution
     );
     return results.map((p, i) => ({
-      lat: p.latitude,
-      lon: p.longitude,
-      elevation: p.elevation,
+      lat: p[0],
+      lon: p[1],
+      elevation: p[2],
       originalIndex: i,
     }));
   }
@@ -196,9 +196,9 @@ export default class TerrainGenerator {
     }));
     const results = await ElevationService.fetchElevations(lookup);
     return results.map((p) => ({
-      lat: p.latitude,
-      lon: p.longitude,
-      elevation: p.elevation,
+      lat: p[0],
+      lon: p[1],
+      elevation: p[2],
     }));
   }
 }

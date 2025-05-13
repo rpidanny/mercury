@@ -61,13 +61,11 @@ def test_get_elevation_grid(app, test_data_path):
 
         # Check values - with real data, all we can do is check they're reasonable
         for result in results:
-            assert "latitude" in result
-            assert "longitude" in result
-            assert "elevation" in result
-            assert result["elevation"] is not None
-            # Ensure values are within reasonable range for Mount Everest area
-            # (some might be lower depending on exact location)
-            assert 5000 < result["elevation"] < 9000
+            assert len(result) == 3  # [lat, lon, elevation]
+            assert isinstance(result[0], float)  # latitude
+            assert isinstance(result[1], float)  # longitude
+            assert result[2] is not None  # elevation is not None
+            assert 5000 < result[2] < 9000  # Reasonable for Everest area
 
 
 def test_get_elevation_error_handling(app, test_data_path):
