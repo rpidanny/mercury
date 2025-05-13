@@ -34,7 +34,7 @@ const Config = {
   LOW_DETAIL_CURVE_SEGMENTS: 2,
   HIGH_DETAIL_RADIAL_SEGMENTS: 16,
   LOW_DETAIL_RADIAL_SEGMENTS: 8,
-  PERFORMANCE_MODE: false, // When true, uses aggressive optimization
+  LOW_POLY_MODE: false, // When true, uses simplified mesh with fewer polygons
 };
 
 export default Config;

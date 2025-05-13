@@ -4,9 +4,9 @@ import { FullFormControls } from '../../components/FormControls';
 import './HomePage.css';
 
 export default function HomePage() {
-  const { state, dispatch, updateModelConfig, setPerformanceMode } = useAppContext();
+  const { state, dispatch, updateModelConfig, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
-  const { loading, performanceMode } = ui;
+  const { loading, lowPolyMode } = ui;
   const { shape, widthMM, altMult, gridRes, coverageFactor: coverageFactor, embossText } = modelConfig;
   const { generateTerrain } = useTerrain();
 
@@ -94,28 +94,28 @@ export default function HomePage() {
           </div>
           
           <div className="mb-6">
-            <label htmlFor="performanceMode" className="block text-sm font-medium text-slate-700 mb-1.5">
-              Performance Mode
+            <label htmlFor="lowPolyMode" className="block text-sm font-medium text-slate-700 mb-1.5">
+              LowPoly
             </label>
             <div className="toggle-container">
-              <p className="text-sm text-slate-700">Reduce memory usage for large models</p>
+              <p className="text-sm text-slate-700">Fewer triangles, lighter model</p>
               <div className="relative inline-block w-12 mr-1 align-middle select-none">
                 <input 
                   type="checkbox" 
-                  id="performanceMode" 
-                  name="performanceMode" 
-                  checked={performanceMode}
-                  onChange={e => setPerformanceMode(e.target.checked)}
+                  id="lowPolyMode" 
+                  name="lowPolyMode" 
+                  checked={lowPolyMode}
+                  onChange={e => setLowPolyMode(e.target.checked)}
                   className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
                 />
                 <label 
-                  htmlFor="performanceMode" 
+                  htmlFor="lowPolyMode" 
                   className="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"
                 ></label>
               </div>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Enable for large models to prevent browser crashes
+              Clean, minimal aesthetic with geometric look
             </p>
           </div>
 

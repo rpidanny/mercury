@@ -18,7 +18,7 @@ type AppState = {
   ui: {
     status: string;
     loading: boolean;
-    performanceMode: boolean;
+    lowPolyMode: boolean;
   };
   resources: {
     font: Font | null;
@@ -35,7 +35,7 @@ type AppAction =
   | { type: 'SET_FONT', payload: Font | null }
   | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
   | { type: 'RESET_TERRAIN' }
-  | { type: 'SET_PERFORMANCE_MODE', payload: boolean };
+  | { type: 'SET_LOW_POLY_MODE', payload: boolean };
 
 // Initial state
 const initialState: AppState = {
@@ -52,7 +52,7 @@ const initialState: AppState = {
   ui: {
     status: '',
     loading: false,
-    performanceMode: false
+    lowPolyMode: false
   },
   resources: {
     font: null,
@@ -113,12 +113,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         resources: { ...state.resources, terrainData: null } 
       };
       
-    case 'SET_PERFORMANCE_MODE':
+    case 'SET_LOW_POLY_MODE':
       // Also update the global config
-      Config.PERFORMANCE_MODE = action.payload;
+      Config.LOW_POLY_MODE = action.payload;
       return {
         ...state,
-        ui: { ...state.ui, performanceMode: action.payload }
+        ui: { ...state.ui, lowPolyMode: action.payload }
       };
     
     default: 
@@ -132,7 +132,7 @@ type AppContextType = {
   updateModelConfig: (updates: Partial<AppState['modelConfig']>) => void;
   setLoading: (isLoading: boolean, message?: string) => void;
   resetTerrain: () => void;
-  setPerformanceMode: (enabled: boolean) => void;
+  setLowPolyMode: (enabled: boolean) => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -162,8 +162,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: 'RESET_TERRAIN' });
   }, []);
   
-  const setPerformanceMode = useCallback((enabled: boolean) => {
-    dispatch({ type: 'SET_PERFORMANCE_MODE', payload: enabled });
+  const setLowPolyMode = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_LOW_POLY_MODE', payload: enabled });
   }, []);
 
   return (
@@ -173,7 +173,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       updateModelConfig, 
       setLoading, 
       resetTerrain,
-      setPerformanceMode
+      setLowPolyMode
     }}>
       {children}
     </AppContext.Provider>

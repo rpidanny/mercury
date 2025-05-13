@@ -67,8 +67,6 @@ export default class ModelBuilder {
   private rotationAngle = 0;
   private rotationMatrix = new THREE.Matrix4();
   private rotationMatrixInverse = new THREE.Matrix4();
-  // The maximum number of grid points to process before simplification
-  private static MAX_POINTS_THRESHOLD = 10000;
 
   private constructor() {}
 
@@ -148,11 +146,8 @@ export default class ModelBuilder {
     // Filter and scale grid points
     this.scaledPoints = this.filterAndScalePoints();
 
-    // If we have too many points, simplify the dataset
-    if (
-      this.scaledPoints.length > Config.MAX_POINTS_THRESHOLD ||
-      Config.PERFORMANCE_MODE
-    ) {
+    // Only simplify points if Low Poly Mode is enabled
+    if (Config.LOW_POLY_MODE) {
       this.simplifyPoints();
     }
 
@@ -186,7 +181,7 @@ export default class ModelBuilder {
     if (this.scaledPoints.length <= 1) return;
 
     console.log(
-      `Simplifying mesh: reducing from ${this.scaledPoints.length} points`
+      `Low Poly Mode: reducing from ${this.scaledPoints.length} points`
     );
 
     // Find bounds
@@ -203,13 +198,10 @@ export default class ModelBuilder {
     }
 
     // Calculate grid dimensions - aim for target number of cells
-    // Use a smaller target number in performance mode
-    const targetCells = Config.PERFORMANCE_MODE
-      ? Math.min(
-          Config.SIMPLIFY_TARGET_POINTS / 2,
-          this.scaledPoints.length / 4
-        )
-      : Math.min(Config.SIMPLIFY_TARGET_POINTS, this.scaledPoints.length / 2);
+    const targetCells = Math.min(
+      Config.SIMPLIFY_TARGET_POINTS,
+      this.scaledPoints.length / 3
+    );
 
     const gridWidth = maxX - minX;
     const gridHeight = maxY - minY;
@@ -257,39 +249,11 @@ export default class ModelBuilder {
 
       // Always keep extremes if they differ significantly
       const zDiff = maxZPoint.z - minZPoint.z;
-
-      // Use more aggressive simplification in performance mode
-      const zThreshold = Config.PERFORMANCE_MODE ? 2.0 : 1.0;
-      const highChangeThreshold = Config.PERFORMANCE_MODE ? 10.0 : 5.0;
+      const zThreshold = 1.0;
 
       if (zDiff > zThreshold) {
         simplified.push(minZPoint);
         simplified.push(maxZPoint);
-
-        // If the cell has significant elevation change, add a middle point too
-        // Skip in performance mode to save memory
-        if (
-          !Config.PERFORMANCE_MODE &&
-          zDiff > highChangeThreshold &&
-          points.length > 3
-        ) {
-          // Find a point near middle elevation
-          const midZ = (minZPoint.z + maxZPoint.z) / 2;
-          let midZPoint = points[0];
-          let minDiff = Math.abs(midZPoint.z - midZ);
-
-          for (let i = 1; i < points.length; i++) {
-            const diff = Math.abs(points[i].z - midZ);
-            if (diff < minDiff) {
-              midZPoint = points[i];
-              minDiff = diff;
-            }
-          }
-
-          if (midZPoint !== minZPoint && midZPoint !== maxZPoint) {
-            simplified.push(midZPoint);
-          }
-        }
       } else {
         // For flat areas, just keep one point
         simplified.push(points[0]);
@@ -329,15 +293,12 @@ export default class ModelBuilder {
       throw new Error("Data must be set before creating track points");
     }
 
-    // For efficiency with large models, limit the number of track points
+    // For efficiency with large models, limit the number of track points only in low poly mode
     let trackPoints = this.data.trackPoints;
-    const maxPoints = Config.PERFORMANCE_MODE
-      ? Config.MAX_TRACK_POINTS / 2
-      : Config.MAX_TRACK_POINTS;
 
-    if (trackPoints.length > maxPoints) {
+    if (Config.LOW_POLY_MODE && trackPoints.length > Config.MAX_TRACK_POINTS) {
       // Subsample track points
-      const step = Math.ceil(trackPoints.length / maxPoints);
+      const step = Math.ceil(trackPoints.length / Config.MAX_TRACK_POINTS);
       trackPoints = trackPoints.filter(
         (_, i) => i % step === 0 || i === trackPoints.length - 1
       );
@@ -354,8 +315,8 @@ export default class ModelBuilder {
       const scaledY = y * this.scale;
 
       // Find containing triangle for interpolation
-      // In performance mode, skip interpolation for some track points to save CPU
-      const shouldInterpolate = !Config.PERFORMANCE_MODE || Math.random() > 0.5;
+      // In low poly mode, skip interpolation for some track points to save CPU
+      const shouldInterpolate = !Config.LOW_POLY_MODE || Math.random() > 0.5;
       const containingTriangle = shouldInterpolate
         ? this.findContainingTriangle(scaledX, scaledY, gridDelaunay)
         : null;
@@ -476,23 +437,25 @@ export default class ModelBuilder {
     // Create a smooth curve through the track points
     const curve = new THREE.CatmullRomCurve3(this.trackPoints3D, false);
 
-    // Calculate appropriate segments based on number of points and performance mode
-    const segmentMultiplier = Config.PERFORMANCE_MODE
+    // Calculate appropriate segments based on number of points and low poly mode
+    const segmentMultiplier = Config.LOW_POLY_MODE
       ? 1
       : this.trackPoints3D.length > 100
       ? 2
       : 5;
+
     const segments = Math.min(
-      Config.PERFORMANCE_MODE ? 200 : 500,
+      Config.LOW_POLY_MODE ? 200 : 500,
       this.trackPoints3D.length * segmentMultiplier
     );
 
     // Create a tube geometry around the curve with adaptive detail
     const tubularSegments = Math.min(
       segments,
-      Config.PERFORMANCE_MODE ? 150 : 300
+      Config.LOW_POLY_MODE ? 150 : 300
     );
-    const radialSegments = Config.PERFORMANCE_MODE
+
+    const radialSegments = Config.LOW_POLY_MODE
       ? Config.LOW_DETAIL_RADIAL_SEGMENTS
       : this.trackPoints3D.length > 200
       ? Config.LOW_DETAIL_RADIAL_SEGMENTS
@@ -668,8 +631,8 @@ export default class ModelBuilder {
       });
       platformGeo.translate(0, yCenter, this.baseZ + 2);
 
-      // Create text geometry with adaptive detail based on model size and performance mode
-      const curveSegments = Config.PERFORMANCE_MODE
+      // Create text geometry with adaptive detail based on model size and low poly mode
+      const curveSegments = Config.LOW_POLY_MODE
         ? Config.LOW_DETAIL_CURVE_SEGMENTS
         : this.scaledPoints.length > 5000
         ? Config.LOW_DETAIL_CURVE_SEGMENTS
