@@ -33,8 +33,10 @@ Mercury transforms your GPX route files into stunning 3D visualizations of the s
 
 ```bash
 # Example for combining Netherlands and Nepal terrain data
-gdalbuildvrt data/geo_AW3D30.vrt data/netherlands_AW3D30.tif data/nepal_AW3D30.tif
+gdalbuildvrt data/geo_AW3D30.vrt data/*.tif
 ```
+
+The docker-compose.yml assumes that the terrain files are in the `data` directory and the virtual raster file is named `geo_AW3D30.vrt`.
 
 > 💡 **Tip:** Download terrain files for the regions where your activities take place.
 
