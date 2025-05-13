@@ -124,21 +124,6 @@ export default class ModelBuilder {
   }
 
   /**
-   * Rotates a 2D point {x,y} according to the current rotation angle
-   */
-  private rotatePoint(point: { x: number; y: number }): {
-    x: number;
-    y: number;
-  } {
-    if (this.rotationAngle === 0) return point;
-
-    const vec = new THREE.Vector3(point.x, point.y, 0);
-    vec.applyMatrix4(this.rotationMatrix);
-
-    return { x: vec.x, y: vec.y };
-  }
-
-  /**
    * Rotates a 2D point {x,y} in the opposite direction of the current rotation angle
    */
   private unrotatePoint(point: { x: number; y: number }): {

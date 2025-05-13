@@ -35,10 +35,8 @@ def test_lookup_endpoint_valid(client, mock_rasterio):
     assert len(data["results"]) == 2
     # Check that we get reasonable values for Everest area
     for result in data["results"]:
-        assert result["elevation"] is not None
-        assert 5000 < result["elevation"] < 9000  # Reasonable range for Everest
-        assert "latitude" in result
-        assert "longitude" in result
+        assert result[2] is not None  # elevation is at index 2
+        assert 5000 < result[2] < 9000  # Reasonable range for Everest
 
 
 def test_lookup_endpoint_invalid_json(client):
@@ -102,8 +100,8 @@ def test_grid_endpoint_valid(client, mock_rasterio):
     # Check that we have 3x3=9 points with reasonable elevation values
     assert len(data["results"]) == 9
     for result in data["results"]:
-        assert result["elevation"] is not None
-        assert 5000 < result["elevation"] < 9000  # Reasonable range for Everest
+        assert result[2] is not None  # elevation is at index 2
+        assert 5000 < result[2] < 9000  # Reasonable range for Everest
 
 
 def test_grid_endpoint_invalid_json(client):

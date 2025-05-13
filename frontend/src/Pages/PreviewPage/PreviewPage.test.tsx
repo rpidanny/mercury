@@ -161,9 +161,9 @@ describe('PreviewPage', () => {
 
     // Mock the timeout needed for debouncing
     vi.spyOn(window, 'clearTimeout').mockImplementation(() => undefined);
-    vi.spyOn(window, 'setTimeout').mockImplementation((fn) => {
+    vi.spyOn(window, 'setTimeout').mockImplementation((fn: TimerHandler) => {
       if (typeof fn === 'function') fn();
-      return 123; // Return a dummy timeout ID
+      return 123 as unknown as NodeJS.Timeout; // Return a dummy timeout ID
     });
 
     render(<PreviewPage />);

@@ -10,17 +10,17 @@ vi.mock("./ElevationService", () => ({
   default: {
     fetchGridElevations: vi.fn().mockResolvedValue({
       results: [
-        { latitude: 37.7749, longitude: -122.4194, elevation: 10 },
-        { latitude: 37.775, longitude: -122.4195, elevation: 15 },
-        { latitude: 37.7751, longitude: -122.4196, elevation: 20 },
+        [37.7749, -122.4194, 10],
+        [37.775, -122.4195, 15],
+        [37.7751, -122.4196, 20],
       ],
       width: 3,
       height: 1,
     }),
     fetchElevations: vi.fn().mockResolvedValue([
-      { latitude: 37.7749, longitude: -122.4194, elevation: 10 },
-      { latitude: 37.775, longitude: -122.4195, elevation: 15 },
-      { latitude: 37.7751, longitude: -122.4196, elevation: 20 },
+      [37.7749, -122.4194, 10],
+      [37.775, -122.4195, 15],
+      [37.7751, -122.4196, 20],
     ]),
   },
 }));
@@ -49,18 +49,18 @@ describe("TerrainGenerator", () => {
     // Reset default mock implementation
     mockGrid.mockResolvedValue({
       results: [
-        { latitude: 37.7749, longitude: -122.4194, elevation: 10 },
-        { latitude: 37.775, longitude: -122.4195, elevation: 15 },
-        { latitude: 37.7751, longitude: -122.4196, elevation: 20 },
+        [37.7749, -122.4194, 10],
+        [37.775, -122.4195, 15],
+        [37.7751, -122.4196, 20],
       ],
       width: 3,
       height: 1,
     });
 
     mockFetch.mockResolvedValue([
-      { latitude: 37.7749, longitude: -122.4194, elevation: 10 },
-      { latitude: 37.775, longitude: -122.4195, elevation: 15 },
-      { latitude: 37.7751, longitude: -122.4196, elevation: 20 },
+      [37.7749, -122.4194, 10],
+      [37.775, -122.4195, 15],
+      [37.7751, -122.4196, 20],
     ]);
 
     // Create a simple mock implementation of generate for our tests

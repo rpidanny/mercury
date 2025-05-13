@@ -3,11 +3,8 @@ export interface LatLon {
   lon: number;
 }
 
-export interface ElevationResult {
-  latitude: number;
-  longitude: number;
-  elevation: number | null;
-}
+// [latitude, longitude, elevation]
+export type ElevationResult = [number, number, number | null];
 
 export interface GridPoint extends LatLon {
   /** Optional index for triangulation / wall building */
