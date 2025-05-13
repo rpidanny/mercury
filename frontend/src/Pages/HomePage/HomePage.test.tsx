@@ -87,7 +87,7 @@ describe('HomePage', () => {
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ gridRes: 600 });
     
     // Test padding factor input
-    const paddingInput = screen.getByLabelText(/padding multiplier/i);
+    const paddingInput = screen.getByLabelText(/coverage factor/i);
     fireEvent.change(paddingInput, { target: { value: '5.5' } });
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ paddingFac: 5.5 });
     

@@ -62,7 +62,7 @@ export default function HomePage() {
             </div>
             <div>
               <label htmlFor="paddingFac" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Padding Multiplier
+                Coverage Factor
               </label>
               <input
                 type="number"
@@ -73,7 +73,7 @@ export default function HomePage() {
                 step={0.05}
                 className="input-field w-full focus:outline-none"
               />
-              <p className="text-xs text-slate-500 mt-1">Multiplier that determines padding around the GPX path</p>
+              <p className="text-xs text-slate-500 mt-1">Determines how much surrounding terrain is included in your model</p>
             </div>
           </div>
 
