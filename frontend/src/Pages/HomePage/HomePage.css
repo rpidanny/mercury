@@ -22,6 +22,55 @@ body {
   }
 }
 
+/* Toggle switch styles */
+.toggle-checkbox {
+  transition: all 0.3s ease;
+  border: 2px solid rgba(203, 213, 225, 0.8);
+  right: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.toggle-checkbox:checked {
+  right: 0;
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
+}
+
+.toggle-checkbox:checked+.toggle-label {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.toggle-label {
+  transition: all 0.3s ease;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+  position: relative;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-label:hover {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Adjust the toggle container to match other form elements */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.toggle-container:hover {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
 .form-section {
   flex: 1;
   padding: 2rem;

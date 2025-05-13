@@ -4,9 +4,9 @@ import { FullFormControls } from '../../components/FormControls';
 import './HomePage.css';
 
 export default function HomePage() {
-  const { state, dispatch, updateModelConfig } = useAppContext();
+  const { state, dispatch, updateModelConfig, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
-  const { loading } = ui;
+  const { loading, lowPolyMode } = ui;
   const { shape, widthMM, altMult, gridRes, coverageFactor: coverageFactor, embossText } = modelConfig;
   const { generateTerrain } = useTerrain();
 
@@ -91,6 +91,32 @@ export default function HomePage() {
               placeholder="Add name, date, or achievement..."
             />
             <p className="text-xs text-slate-500 mt-1">Text will be embossed on your 3D model</p>
+          </div>
+          
+          <div className="mb-6">
+            <label htmlFor="lowPolyMode" className="block text-sm font-medium text-slate-700 mb-1.5">
+              LowPoly
+            </label>
+            <div className="toggle-container">
+              <p className="text-sm text-slate-700">Fewer triangles, lighter model</p>
+              <div className="relative inline-block w-12 mr-1 align-middle select-none">
+                <input 
+                  type="checkbox" 
+                  id="lowPolyMode" 
+                  name="lowPolyMode" 
+                  checked={lowPolyMode}
+                  onChange={e => setLowPolyMode(e.target.checked)}
+                  className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                />
+                <label 
+                  htmlFor="lowPolyMode" 
+                  className="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"
+                ></label>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Clean, minimal aesthetic with geometric look
+            </p>
           </div>
 
           <button
