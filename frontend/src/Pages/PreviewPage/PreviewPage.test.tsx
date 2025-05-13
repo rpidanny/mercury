@@ -38,7 +38,7 @@ describe('PreviewPage', () => {
         widthMM: 100, 
         altMult: 1,
         gridRes: 500,
-        paddingFac: 4.0,
+        coverageFactor: 4.0,
         embossText: '',
         rotationAngle: 0 
       },
@@ -143,7 +143,7 @@ describe('PreviewPage', () => {
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
-          paddingFac: 4.0,
+          coverageFactor: 4.0,
           embossText: '',
           rotationAngle: 0 
         },
@@ -193,7 +193,7 @@ describe('PreviewPage', () => {
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
-          paddingFac: 4.0,
+          coverageFactor: 4.0,
           embossText: '',
           rotationAngle: 0 
         },

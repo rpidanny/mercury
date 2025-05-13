@@ -28,7 +28,7 @@ describe('HomePage', () => {
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
-          paddingFac: 4.0,
+          coverageFactor: 4.0,
           embossText: '',
           rotationAngle: 0 
         },
@@ -66,7 +66,7 @@ describe('HomePage', () => {
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
-          paddingFac: 4.0,
+          coverageFactor: 4.0,
           embossText: '',
           rotationAngle: 0 
         },
@@ -86,10 +86,10 @@ describe('HomePage', () => {
     fireEvent.change(gridResInput, { target: { value: '600' } });
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ gridRes: 600 });
     
-    // Test padding factor input
-    const paddingInput = screen.getByLabelText(/coverage factor/i);
-    fireEvent.change(paddingInput, { target: { value: '5.5' } });
-    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ paddingFac: 5.5 });
+    // Test coverage factor input
+    const coverageInput = screen.getByLabelText(/coverage factor/i);
+    fireEvent.change(coverageInput, { target: { value: '5.5' } });
+    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ coverageFactor: 5.5 });
     
     // Test emboss text input
     const textArea = screen.getByLabelText(/personalize your model/i);
@@ -112,7 +112,7 @@ describe('HomePage', () => {
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
-          paddingFac: 4.0,
+          coverageFactor: 4.0,
           embossText: '',
           rotationAngle: 0 
         },
@@ -143,7 +143,7 @@ describe('HomePage', () => {
           widthMM: 100, 
           altMult: 1,
           gridRes: 500,
-          paddingFac: 4.0,
+          coverageFactor: 4.0,
           embossText: '',
           rotationAngle: 0 
         },

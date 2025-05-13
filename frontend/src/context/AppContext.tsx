@@ -10,7 +10,8 @@ type AppState = {
     widthMM: number;
     altMult: number;
     gridRes: number;
-    paddingFac: number;
+    coverageFactor: number;
+    coverageFactor?: number;
     embossText: string;
     rotationAngle: number;
   };
@@ -42,7 +43,8 @@ const initialState: AppState = {
     widthMM: 100,
     altMult: 1,
     gridRes: 500,
-    paddingFac: 4.0,
+    coverageFactor: 4.0,
+    coverageFactor: 4.0,
     embossText: '',
     rotationAngle: 0
   },
@@ -62,11 +64,19 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_FILE': 
       return { ...state, file: action.payload };
     
-    case 'UPDATE_MODEL_CONFIG': 
+    case 'UPDATE_MODEL_CONFIG': {
+      const payload = { ...action.payload };
+      if ('coverageFactor' in payload) {
+        payload.coverageFactor = payload.coverageFactor;
+      } else if ('coverageFactor' in payload) {
+        payload.coverageFactor = payload.coverageFactor;
+      }
+      
       return { 
         ...state, 
-        modelConfig: { ...state.modelConfig, ...action.payload } 
+        modelConfig: { ...state.modelConfig, ...payload } 
       };
+    }
     
     case 'SET_STATUS': 
       return { 
