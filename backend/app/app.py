@@ -19,6 +19,7 @@ except ValueError as e:
 from app.utils.logger import configure_logging
 from app.routes.lookup import lookup_bp
 from app.routes.grid import grid_bp
+from app.routes.gpx_to_stl import gpx_to_stl_bp
 from app.version import VERSION
 from app.services.elevation import ElevationService
 
@@ -63,6 +64,7 @@ def create_app():
     # Register API blueprints with config
     app.register_blueprint(lookup_bp)
     app.register_blueprint(grid_bp)
+    app.register_blueprint(gpx_to_stl_bp)
 
     return app
 
