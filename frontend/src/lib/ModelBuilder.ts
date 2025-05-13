@@ -370,6 +370,12 @@ export default class ModelBuilder {
 
     // Move base to correct z position
     geo.translate(0, 0, this.baseZ);
+
+    // Apply rotation if needed
+    if (this.rotationAngle !== 0) {
+      geo.applyMatrix4(this.rotationMatrix);
+    }
+
     return geo;
   }
 
