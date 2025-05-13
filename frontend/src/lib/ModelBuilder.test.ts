@@ -246,4 +246,84 @@ describe("ModelBuilder", () => {
     // The test passing without an error is the main verification,
     // as it would previously throw a stack overflow error
   });
+
+  it("should apply rotation to both shape and base geometry", () => {
+    const mockTerrainData = createMockTerrainData();
+    const modelWidthMM = 100;
+    const altitudeMultiplier = 1;
+    const shapeType: ShapeType = "square";
+    const embossText = "";
+    const font = null;
+
+    // Create a model without rotation
+    const modelWithoutRotation = ModelBuilder.build(
+      mockTerrainData,
+      modelWidthMM,
+      altitudeMultiplier,
+      shapeType,
+      embossText,
+      font,
+      0 // No rotation
+    );
+
+    // Create a model with rotation
+    const rotationAngle = 45; // 45 degrees rotation
+    const modelWithRotation = ModelBuilder.build(
+      mockTerrainData,
+      modelWidthMM,
+      altitudeMultiplier,
+      shapeType,
+      embossText,
+      font,
+      rotationAngle
+    );
+
+    // Verify both models were created successfully
+    expect(modelWithoutRotation).toHaveProperty("mesh");
+    expect(modelWithRotation).toHaveProperty("mesh");
+
+    // Verify both are THREE.Group instances
+    expect(modelWithoutRotation.mesh).toBeInstanceOf(THREE.Group);
+    expect(modelWithRotation.mesh).toBeInstanceOf(THREE.Group);
+
+    // Both should have the same number of children
+    expect(modelWithoutRotation.mesh.children.length).toBe(
+      modelWithRotation.mesh.children.length
+    );
+
+    // Access the base geometry (which should be child index 2 based on createMeshes function)
+    const baseWithoutRotation = modelWithoutRotation.mesh
+      .children[2] as THREE.Mesh;
+    const baseWithRotation = modelWithRotation.mesh.children[2] as THREE.Mesh;
+
+    // Verify the meshes are different (due to rotation)
+    expect(baseWithoutRotation).not.toBe(baseWithRotation);
+
+    // For a deeper check, we could verify the vertex positions are different
+    // This requires getting the vertices from the geometry
+    const baseWithoutRotationVertices = (
+      baseWithoutRotation.geometry as THREE.BufferGeometry
+    ).getAttribute("position").array;
+    const baseWithRotationVertices = (
+      baseWithRotation.geometry as THREE.BufferGeometry
+    ).getAttribute("position").array;
+
+    // At least some vertices should be different when rotated
+    let isDifferent = false;
+    for (let i = 0; i < baseWithoutRotationVertices.length; i += 3) {
+      // Check x and y coordinates (ignoring z as rotation is in xy plane)
+      if (
+        Math.abs(baseWithoutRotationVertices[i] - baseWithRotationVertices[i]) >
+          0.001 ||
+        Math.abs(
+          baseWithoutRotationVertices[i + 1] - baseWithRotationVertices[i + 1]
+        ) > 0.001
+      ) {
+        isDifferent = true;
+        break;
+      }
+    }
+
+    expect(isDifferent).toBe(true);
+  });
 });
