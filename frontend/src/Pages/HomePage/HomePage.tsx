@@ -6,8 +6,8 @@ import './HomePage.css';
 export default function HomePage() {
   const { state, dispatch, updateModelConfig, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
-  const { loading, lowPolyMode } = ui;
-  const { shape, widthMM, altMult, gridRes, coverageFactor: coverageFactor, embossText } = modelConfig;
+  const { loading } = ui;
+  const { shape, widthMM, altMult, gridRes, coverageFactor: coverageFactor, embossText, lowPolyMode } = modelConfig;
   const { generateTerrain } = useTerrain();
 
   return (

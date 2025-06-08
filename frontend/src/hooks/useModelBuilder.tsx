@@ -9,7 +9,7 @@ export const useModelBuilder = () => {
   const { state, setLoading } = useAppContext();
   const { resources, modelConfig } = state;
   const { terrainData, font } = resources;
-  const { widthMM, altMult, shape, embossText, rotationAngle } = modelConfig;
+  const { widthMM, altMult, shape, embossText, rotationAngle, lowPolyMode } = modelConfig;
   
   const [localMesh, setLocalMesh] = useState<Object3D | null>(null);
   const [pendingChanges, setPendingChanges] = useState<boolean>(false);
@@ -58,7 +58,8 @@ export const useModelBuilder = () => {
               shape,
               embossText,
               font,
-              rotationAngle
+              rotationAngle,
+              lowPolyMode
             );
             resolve(modelResult);
           });
@@ -85,7 +86,7 @@ export const useModelBuilder = () => {
     if (!initialRenderComplete.current || pendingChanges) {
       buildModel();
     }
-  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, setLoading, isRendererInitialized, localMesh]);
+  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, lowPolyMode, setLoading, isRendererInitialized, localMesh]);
   
   // Update renderer when mesh changes after initial render
   useEffect(() => {

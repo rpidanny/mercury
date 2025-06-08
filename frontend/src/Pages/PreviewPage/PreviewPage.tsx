@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ShapeType } from '../../lib/types';
 import { useAppContext } from '../../context/AppContext';
 import { useModelBuilder } from '../../hooks/useModelBuilder';
@@ -11,7 +11,8 @@ import {
   DownloadIcon,
   HexagonIcon,
   SquareIcon,
-  CircleIcon
+  CircleIcon,
+  LowPolyIcon
 } from '../../components/Icons';
 import ToolbarControl from '../../components/ToolbarControl';
 import './PreviewPage.css';
@@ -24,10 +25,10 @@ declare global {
 }
 
 export default function PreviewPage() {
-  const { state, updateModelConfig, resetTerrain } = useAppContext();
+  const { state, updateModelConfig, resetTerrain, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
   const { loading } = ui;
-  const { shape, widthMM, altMult, rotationAngle } = modelConfig;
+  const { shape, widthMM, altMult, rotationAngle, lowPolyMode } = modelConfig;
   
   // Local UI state
   const [activeControl, setActiveControl] = useState<string | null>(null);
@@ -35,9 +36,33 @@ export default function PreviewPage() {
   const [isAltitudeChanging, setIsAltitudeChanging] = useState<boolean>(false);
   const [isWidthChanging, setIsWidthChanging] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   
   // Use the custom hook for model building and rendering
   const { localMesh, updateModel, downloadModel } = useModelBuilder();
+
+  // Close toolbar panels when clicking outside or pressing escape
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeControl && toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) {
+        setActiveControl(null);
+      }
+    };
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && activeControl) {
+        setActiveControl(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [activeControl]);
 
   // Toggle active control panel
   const toggleControl = useCallback((controlName: string) => {
@@ -106,6 +131,12 @@ export default function PreviewPage() {
     shape === currentShape ? 'active' : '', 
   [shape]);
 
+  // Handle lowPolyMode changes
+  const handleLowPolyModeChange = useCallback((enabled: boolean) => {
+    setLowPolyMode(enabled);
+    updateModel();
+  }, [setLowPolyMode, updateModel]);
+
   return (
     <>
       <div id="scene-container" ref={containerRef} />
@@ -133,7 +164,7 @@ export default function PreviewPage() {
         <span className="tooltip">Download 3D model</span>
       </div>
       
-      <div className="toolbar">
+      <div className="toolbar" ref={toolbarRef}>
         {/* Width control */}
         <div className="toolbar-control-wrapper">
           <ToolbarControl
@@ -311,6 +342,46 @@ export default function PreviewPage() {
             </div>
           </ToolbarControl>
           <span className="tooltip">Rotate terrain model</span>
+        </div>
+        
+        {/* LowPoly control */}
+        <div className="toolbar-control-wrapper">
+          <ToolbarControl
+            name="lowpoly"
+            activeControl={activeControl}
+            toggleControl={toggleControl}
+            title="Toggle LowPoly mode"
+            disabled={loading}
+            icon={<LowPolyIcon />}
+          >
+            <div className="lowpoly-control-container">
+              <label className="lowpoly-label">Model Style</label>
+              <div className="lowpoly-toggle-wrapper">
+                <div className="lowpoly-toggle-control">
+                  <span className={`lowpoly-status-text ${lowPolyMode ? 'active' : ''}`}>
+                    {lowPolyMode ? 'Low Poly' : 'Detailed'}
+                  </span>
+                  <label className="modern-toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      className="modern-toggle-input"
+                      checked={lowPolyMode}
+                      onChange={e => handleLowPolyModeChange(e.target.checked)}
+                      disabled={loading}
+                    />
+                    <span className="modern-toggle-slider"></span>
+                  </label>
+                </div>
+                <p className="lowpoly-description">
+                  {lowPolyMode 
+                    ? 'Clean low poly geometry with minimal triangles' 
+                    : 'Rich detail with smooth curves'
+                  }
+                </p>
+              </div>
+            </div>
+          </ToolbarControl>
+          <span className="tooltip">Toggle geometric style</span>
         </div>
       </div>
     </>

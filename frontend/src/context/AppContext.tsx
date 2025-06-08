@@ -2,7 +2,6 @@ import { createContext, useContext, useReducer, ReactNode, Dispatch, useCallback
 import { ShapeType } from '../lib/types';
 import { Font } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TerrainData } from '../lib/TerrainGenerator';
-import Config from '../lib/config';
 
 type AppState = {
   file: File | null;
@@ -14,11 +13,11 @@ type AppState = {
     coverageFactor: number;
     embossText: string;
     rotationAngle: number;
+    lowPolyMode: boolean;
   };
   ui: {
     status: string;
     loading: boolean;
-    lowPolyMode: boolean;
   };
   resources: {
     font: Font | null;
@@ -34,8 +33,7 @@ type AppAction =
   | { type: 'SET_LOADING_WITH_STATUS', payload: { loading: boolean, status: string } }
   | { type: 'SET_FONT', payload: Font | null }
   | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
-  | { type: 'RESET_TERRAIN' }
-  | { type: 'SET_LOW_POLY_MODE', payload: boolean };
+  | { type: 'RESET_TERRAIN' };
 
 // Initial state
 const initialState: AppState = {
@@ -47,12 +45,12 @@ const initialState: AppState = {
     gridRes: 500,
     coverageFactor: 4.0,
     embossText: '',
-    rotationAngle: 0
+    rotationAngle: 0,
+    lowPolyMode: false
   },
   ui: {
     status: '',
-    loading: false,
-    lowPolyMode: false
+    loading: false
   },
   resources: {
     font: null,
@@ -112,14 +110,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state, 
         resources: { ...state.resources, terrainData: null } 
       };
-      
-    case 'SET_LOW_POLY_MODE':
-      // Also update the global config
-      Config.LOW_POLY_MODE = action.payload;
-      return {
-        ...state,
-        ui: { ...state.ui, lowPolyMode: action.payload }
-      };
     
     default: 
       return state;
@@ -163,8 +153,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const setLowPolyMode = useCallback((enabled: boolean) => {
-    dispatch({ type: 'SET_LOW_POLY_MODE', payload: enabled });
-  }, []);
+    updateModelConfig({ lowPolyMode: enabled });
+  }, [updateModelConfig]);
 
   return (
     <AppContext.Provider value={{ 

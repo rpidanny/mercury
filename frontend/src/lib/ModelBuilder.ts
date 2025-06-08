@@ -34,7 +34,8 @@ export default class ModelBuilder {
     shapeType: ShapeType,
     embossText: string,
     font: Font | null,
-    rotationAngle: number = 0
+    rotationAngle: number = 0,
+    lowPolyMode: boolean = false
   ): BuildResult {
     const builder = new ModelBuilder();
 
@@ -46,7 +47,8 @@ export default class ModelBuilder {
         shapeType,
         embossText,
         font,
-        rotationAngle
+        rotationAngle,
+        lowPolyMode
       );
     } catch (error) {
       console.error("Error building model:", error);
@@ -67,6 +69,7 @@ export default class ModelBuilder {
   private rotationAngle = 0;
   private rotationMatrix = new THREE.Matrix4();
   private rotationMatrixInverse = new THREE.Matrix4();
+  private lowPolyMode = false;
 
   private constructor() {}
 
@@ -77,13 +80,15 @@ export default class ModelBuilder {
     shapeType: ShapeType,
     embossText: string,
     font: Font | null,
-    rotationAngle: number = 0
+    rotationAngle: number = 0,
+    lowPolyMode: boolean = false
   ): BuildResult {
     // Store parameters
     this.data = data;
     this.scale = modelWidthMM / data.widthGeo;
     this.altitudeMultiplier = altitudeMultiplier;
     this.rotationAngle = rotationAngle;
+    this.lowPolyMode = lowPolyMode;
 
     // Create rotation matrices
     if (rotationAngle !== 0) {
@@ -147,7 +152,7 @@ export default class ModelBuilder {
     this.scaledPoints = this.filterAndScalePoints();
 
     // Only simplify points if Low Poly Mode is enabled
-    if (Config.LOW_POLY_MODE) {
+    if (this.lowPolyMode) {
       this.simplifyPoints();
     }
 
@@ -296,7 +301,7 @@ export default class ModelBuilder {
     // For efficiency with large models, limit the number of track points only in low poly mode
     let trackPoints = this.data.trackPoints;
 
-    if (Config.LOW_POLY_MODE && trackPoints.length > Config.MAX_TRACK_POINTS) {
+    if (this.lowPolyMode && trackPoints.length > Config.MAX_TRACK_POINTS) {
       // Subsample track points
       const step = Math.ceil(trackPoints.length / Config.MAX_TRACK_POINTS);
       trackPoints = trackPoints.filter(
@@ -316,7 +321,7 @@ export default class ModelBuilder {
 
       // Find containing triangle for interpolation
       // In low poly mode, skip interpolation for some track points to save CPU
-      const shouldInterpolate = !Config.LOW_POLY_MODE || Math.random() > 0.5;
+      const shouldInterpolate = !this.lowPolyMode || Math.random() > 0.5;
       const containingTriangle = shouldInterpolate
         ? this.findContainingTriangle(scaledX, scaledY, gridDelaunay)
         : null;
@@ -438,24 +443,21 @@ export default class ModelBuilder {
     const curve = new THREE.CatmullRomCurve3(this.trackPoints3D, false);
 
     // Calculate appropriate segments based on number of points and low poly mode
-    const segmentMultiplier = Config.LOW_POLY_MODE
+    const segmentMultiplier = this.lowPolyMode
       ? 1
       : this.trackPoints3D.length > 100
       ? 2
       : 5;
 
     const segments = Math.min(
-      Config.LOW_POLY_MODE ? 200 : 500,
+      this.lowPolyMode ? 200 : 500,
       this.trackPoints3D.length * segmentMultiplier
     );
 
     // Create a tube geometry around the curve with adaptive detail
-    const tubularSegments = Math.min(
-      segments,
-      Config.LOW_POLY_MODE ? 150 : 300
-    );
+    const tubularSegments = Math.min(segments, this.lowPolyMode ? 150 : 300);
 
-    const radialSegments = Config.LOW_POLY_MODE
+    const radialSegments = this.lowPolyMode
       ? Config.LOW_DETAIL_RADIAL_SEGMENTS
       : this.trackPoints3D.length > 200
       ? Config.LOW_DETAIL_RADIAL_SEGMENTS
@@ -632,7 +634,7 @@ export default class ModelBuilder {
       platformGeo.translate(0, yCenter, this.baseZ + 2);
 
       // Create text geometry with adaptive detail based on model size and low poly mode
-      const curveSegments = Config.LOW_POLY_MODE
+      const curveSegments = this.lowPolyMode
         ? Config.LOW_DETAIL_CURVE_SEGMENTS
         : this.scaledPoints.length > 5000
         ? Config.LOW_DETAIL_CURVE_SEGMENTS
