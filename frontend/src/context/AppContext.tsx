@@ -13,6 +13,7 @@ type AppState = {
     coverageFactor: number;
     embossText: string;
     rotationAngle: number;
+    lowPolyMode: boolean;
   };
   ui: {
     status: string;
@@ -44,7 +45,8 @@ const initialState: AppState = {
     gridRes: 500,
     coverageFactor: 4.0,
     embossText: '',
-    rotationAngle: 0
+    rotationAngle: 0,
+    lowPolyMode: false
   },
   ui: {
     status: '',
@@ -85,6 +87,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { 
         ...state, 
         ui: { 
+          ...state.ui,
           loading: action.payload.loading, 
           status: action.payload.status 
         } 
@@ -119,6 +122,7 @@ type AppContextType = {
   updateModelConfig: (updates: Partial<AppState['modelConfig']>) => void;
   setLoading: (isLoading: boolean, message?: string) => void;
   resetTerrain: () => void;
+  setLowPolyMode: (enabled: boolean) => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -147,6 +151,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const resetTerrain = useCallback(() => {
     dispatch({ type: 'RESET_TERRAIN' });
   }, []);
+  
+  const setLowPolyMode = useCallback((enabled: boolean) => {
+    updateModelConfig({ lowPolyMode: enabled });
+  }, [updateModelConfig]);
 
   return (
     <AppContext.Provider value={{ 
@@ -154,7 +162,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       dispatch, 
       updateModelConfig, 
       setLoading, 
-      resetTerrain 
+      resetTerrain,
+      setLowPolyMode
     }}>
       {children}
     </AppContext.Provider>

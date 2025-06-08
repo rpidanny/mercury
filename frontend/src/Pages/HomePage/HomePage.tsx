@@ -4,10 +4,10 @@ import { FullFormControls } from '../../components/FormControls';
 import './HomePage.css';
 
 export default function HomePage() {
-  const { state, dispatch, updateModelConfig } = useAppContext();
+  const { state, dispatch, updateModelConfig, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
   const { loading } = ui;
-  const { shape, widthMM, altMult, gridRes, coverageFactor: coverageFactor, embossText } = modelConfig;
+  const { shape, widthMM, altMult, gridRes, coverageFactor: coverageFactor, embossText, lowPolyMode } = modelConfig;
   const { generateTerrain } = useTerrain();
 
   return (
@@ -91,6 +91,35 @@ export default function HomePage() {
               placeholder="Add name, date, or achievement..."
             />
             <p className="text-xs text-slate-500 mt-1">Text will be embossed on your 3D model</p>
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Model Style
+            </label>
+            <div className="homepage-lowpoly-control">
+              <div className="homepage-toggle-control">
+                <span className={`homepage-status-text ${lowPolyMode ? 'active' : ''}`}>
+                  {lowPolyMode ? 'Low Poly' : 'Detailed'}
+                </span>
+                <label className="homepage-toggle-switch">
+                  <input 
+                    type="checkbox" 
+                    className="homepage-toggle-input"
+                    checked={lowPolyMode}
+                    onChange={e => setLowPolyMode(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="homepage-toggle-slider"></span>
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                {lowPolyMode 
+                  ? 'Clean low poly geometry with minimal triangles' 
+                  : 'Rich detail with smooth curves'
+                }
+              </p>
+            </div>
           </div>
 
           <button

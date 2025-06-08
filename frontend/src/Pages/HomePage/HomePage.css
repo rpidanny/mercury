@@ -22,6 +22,55 @@ body {
   }
 }
 
+/* Toggle switch styles */
+.toggle-checkbox {
+  transition: all 0.3s ease;
+  border: 2px solid rgba(203, 213, 225, 0.8);
+  right: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.toggle-checkbox:checked {
+  right: 0;
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
+}
+
+.toggle-checkbox:checked+.toggle-label {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.toggle-label {
+  transition: all 0.3s ease;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+  position: relative;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-label:hover {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Adjust the toggle container to match other form elements */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.toggle-container:hover {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
 .form-section {
   flex: 1;
   padding: 2rem;
@@ -308,4 +357,97 @@ body.model-mode #form-container h1 {
     width: 400px;
     height: 400px;
   }
+}
+
+/* Modern LowPoly control styles for HomePage */
+.homepage-lowpoly-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.homepage-toggle-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s ease;
+}
+
+.homepage-toggle-control:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.homepage-status-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.homepage-status-text.active {
+  color: #6366f1;
+}
+
+/* Modern toggle switch for HomePage */
+.homepage-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.homepage-toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.homepage-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.homepage-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.homepage-toggle-input:checked+.homepage-toggle-slider {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.homepage-toggle-input:checked+.homepage-toggle-slider:before {
+  transform: translateX(20px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.homepage-toggle-input:disabled+.homepage-toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.homepage-toggle-slider:hover:not(.disabled) {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(99, 102, 241, 0.1);
 }

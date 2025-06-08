@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ShapeType } from '../../lib/types';
 import { useAppContext } from '../../context/AppContext';
 import { useModelBuilder } from '../../hooks/useModelBuilder';
@@ -11,7 +11,8 @@ import {
   DownloadIcon,
   HexagonIcon,
   SquareIcon,
-  CircleIcon
+  CircleIcon,
+  LowPolyIcon
 } from '../../components/Icons';
 import ToolbarControl from '../../components/ToolbarControl';
 import './PreviewPage.css';
@@ -24,10 +25,10 @@ declare global {
 }
 
 export default function PreviewPage() {
-  const { state, updateModelConfig, resetTerrain } = useAppContext();
+  const { state, updateModelConfig, resetTerrain, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
   const { loading } = ui;
-  const { shape, widthMM, altMult, rotationAngle } = modelConfig;
+  const { shape, widthMM, altMult, rotationAngle, lowPolyMode } = modelConfig;
   
   // Local UI state
   const [activeControl, setActiveControl] = useState<string | null>(null);
@@ -35,9 +36,33 @@ export default function PreviewPage() {
   const [isAltitudeChanging, setIsAltitudeChanging] = useState<boolean>(false);
   const [isWidthChanging, setIsWidthChanging] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   
   // Use the custom hook for model building and rendering
   const { localMesh, updateModel, downloadModel } = useModelBuilder();
+
+  // Close toolbar panels when clicking outside or pressing escape
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeControl && toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) {
+        setActiveControl(null);
+      }
+    };
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && activeControl) {
+        setActiveControl(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [activeControl]);
 
   // Toggle active control panel
   const toggleControl = useCallback((controlName: string) => {
@@ -106,6 +131,12 @@ export default function PreviewPage() {
     shape === currentShape ? 'active' : '', 
   [shape]);
 
+  // Handle lowPolyMode changes
+  const handleLowPolyModeChange = useCallback((enabled: boolean) => {
+    setLowPolyMode(enabled);
+    updateModel();
+  }, [setLowPolyMode, updateModel]);
+
   return (
     <>
       <div id="scene-container" ref={containerRef} />
@@ -133,7 +164,7 @@ export default function PreviewPage() {
         <span className="tooltip">Download 3D model</span>
       </div>
       
-      <div className="toolbar">
+      <div className="toolbar" ref={toolbarRef}>
         {/* Width control */}
         <div className="toolbar-control-wrapper">
           <ToolbarControl
@@ -141,7 +172,7 @@ export default function PreviewPage() {
             activeControl={activeControl}
             toggleControl={toggleControl}
             isChanging={isWidthChanging}
-            title="Adjust model size"
+            title="Resize your 3D model"
             disabled={loading}
             icon={<WidthIcon />}
           >
@@ -153,7 +184,7 @@ export default function PreviewPage() {
                   className={`size-preset-button ${widthMM <= 100 ? 'active' : ''}`}
                   onClick={() => handleWidthChange(100)}
                   disabled={loading || widthMM === 100}
-                  title="Small (100mm)"
+                  title="Small model (100mm)"
                   type="button"
                 >
                   <div className="size-icon small"></div>
@@ -164,7 +195,7 @@ export default function PreviewPage() {
                   className={`size-preset-button ${widthMM > 100 && widthMM <= 250 ? 'active' : ''}`}
                   onClick={() => handleWidthChange(250)}
                   disabled={loading || widthMM === 250}
-                  title="Medium (250mm)"
+                  title="Medium model (250mm)"
                   type="button"
                 >
                   <div className="size-icon medium"></div>
@@ -175,7 +206,7 @@ export default function PreviewPage() {
                   className={`size-preset-button ${widthMM > 250 ? 'active' : ''}`}
                   onClick={() => handleWidthChange(500)}
                   disabled={loading || widthMM === 500}
-                  title="Large (500mm)"
+                  title="Large model (500mm)"
                   type="button"
                 >
                   <div className="size-icon large"></div>
@@ -204,7 +235,7 @@ export default function PreviewPage() {
               </div>
             </div>
           </ToolbarControl>
-          <span className="tooltip">Adjust model size</span>
+          <span className="tooltip">Resize your 3D model</span>
         </div>
         
         {/* Shape selector control */}
@@ -213,14 +244,14 @@ export default function PreviewPage() {
             name="shape"
             activeControl={activeControl}
             toggleControl={toggleControl}
-            title="Change shape"
+            title="Choose base shape"
             disabled={loading}
             icon={<ShapeIcon />}
           >
             <button 
               className={`shape-button ${isShapeActive('hexagon')}`} 
               onClick={() => handleShapeChange('hexagon')}
-              title="Hexagon shape"
+              title="Hexagon base"
               disabled={loading}
             >
               <HexagonIcon />
@@ -228,7 +259,7 @@ export default function PreviewPage() {
             <button 
               className={`shape-button ${isShapeActive('square')}`} 
               onClick={() => handleShapeChange('square')}
-              title="Square shape"
+              title="Square base"
               disabled={loading}
             >
               <SquareIcon />
@@ -236,13 +267,13 @@ export default function PreviewPage() {
             <button 
               className={`shape-button ${isShapeActive('circle')}`} 
               onClick={() => handleShapeChange('circle')}
-              title="Circle shape"
+              title="Circle base"
               disabled={loading}
             >
               <CircleIcon />
             </button>
           </ToolbarControl>
-          <span className="tooltip">Change model shape</span>
+          <span className="tooltip">Choose base shape</span>
         </div>
         
         {/* Altitude multiplier control */}
@@ -252,7 +283,7 @@ export default function PreviewPage() {
             activeControl={activeControl}
             toggleControl={toggleControl}
             isChanging={isAltitudeChanging}
-            title="Adjust altitude"
+            title="Scale terrain elevation"
             disabled={loading}
             icon={<AltitudeIcon />}
           >
@@ -278,7 +309,7 @@ export default function PreviewPage() {
               </div>
             </div>
           </ToolbarControl>
-          <span className="tooltip">Adjust terrain height</span>
+          <span className="tooltip">Scale terrain elevation</span>
         </div>
         
         {/* Rotation control */}
@@ -288,7 +319,7 @@ export default function PreviewPage() {
             activeControl={activeControl}
             toggleControl={toggleControl}
             isChanging={isRotating}
-            title="Rotate terrain"
+            title="Rotate your model"
             disabled={loading}
             icon={<RotationIcon />}
           >
@@ -310,7 +341,47 @@ export default function PreviewPage() {
               <span className="rotation-value">{rotationAngle}°</span>
             </div>
           </ToolbarControl>
-          <span className="tooltip">Rotate terrain model</span>
+          <span className="tooltip">Rotate your model</span>
+        </div>
+        
+        {/* LowPoly control */}
+        <div className="toolbar-control-wrapper">
+          <ToolbarControl
+            name="lowpoly"
+            activeControl={activeControl}
+            toggleControl={toggleControl}
+            title="Switch between detailed & low poly styles"
+            disabled={loading}
+            icon={<LowPolyIcon />}
+          >
+            <div className="lowpoly-control-container">
+              <label className="lowpoly-label">Model Style</label>
+              <div className="lowpoly-toggle-wrapper">
+                <div className="lowpoly-toggle-control">
+                  <span className={`lowpoly-status-text ${lowPolyMode ? 'active' : ''}`}>
+                    {lowPolyMode ? 'Low Poly' : 'Detailed'}
+                  </span>
+                  <label className="modern-toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      className="modern-toggle-input"
+                      checked={lowPolyMode}
+                      onChange={e => handleLowPolyModeChange(e.target.checked)}
+                      disabled={loading}
+                    />
+                    <span className="modern-toggle-slider"></span>
+                  </label>
+                </div>
+                <p className="lowpoly-description">
+                  {lowPolyMode 
+                    ? 'Clean low poly geometry with minimal triangles' 
+                    : 'Rich detail with smooth curves'
+                  }
+                </p>
+              </div>
+            </div>
+          </ToolbarControl>
+          <span className="tooltip">Switch between detailed & low poly styles</span>
         </div>
       </div>
     </>
