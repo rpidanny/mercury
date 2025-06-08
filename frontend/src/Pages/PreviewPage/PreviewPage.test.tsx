@@ -40,7 +40,8 @@ describe('PreviewPage', () => {
         gridRes: 500,
         coverageFactor: 4.0,
         embossText: '',
-        rotationAngle: 0 
+        rotationAngle: 0,
+        lowPolyMode: false
       },
       file: null,
       resources: { 
@@ -51,7 +52,8 @@ describe('PreviewPage', () => {
     dispatch: vi.fn(),
     updateModelConfig: vi.fn(),
     setLoading: vi.fn(),
-    resetTerrain: vi.fn()
+    resetTerrain: vi.fn(),
+    setLowPolyMode: vi.fn()
   };
   
   beforeEach(() => {
@@ -111,11 +113,11 @@ describe('PreviewPage', () => {
     render(<PreviewPage />);
     
     // Open the shape selection panel
-    const shapeToolbarBtn = screen.getByTitle('Change shape');
+    const shapeToolbarBtn = screen.getByTitle('Choose base shape');
     fireEvent.click(shapeToolbarBtn);
 
     // Find and click the circle shape button
-    const circleBtn = screen.getByTitle('Circle shape');
+    const circleBtn = screen.getByTitle('Circle base');
     fireEvent.click(circleBtn);
 
     // Verify that update functions were called
@@ -145,7 +147,8 @@ describe('PreviewPage', () => {
           gridRes: 500,
           coverageFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { 
@@ -156,7 +159,8 @@ describe('PreviewPage', () => {
       dispatch: vi.fn(),
       updateModelConfig,
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
 
     // Mock the timeout needed for debouncing
@@ -169,7 +173,7 @@ describe('PreviewPage', () => {
     render(<PreviewPage />);
 
     // Open the width control panel
-    const widthToolbarBtn = screen.getByTitle('Adjust model size');
+    const widthToolbarBtn = screen.getByTitle('Resize your 3D model');
     fireEvent.click(widthToolbarBtn);
 
     // Find and change the width slider
@@ -195,7 +199,8 @@ describe('PreviewPage', () => {
           gridRes: 500,
           coverageFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { 
@@ -206,7 +211,8 @@ describe('PreviewPage', () => {
       dispatch: vi.fn(),
       updateModelConfig,
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
     
     // Override model builder hook
@@ -219,7 +225,7 @@ describe('PreviewPage', () => {
     render(<PreviewPage />);
 
     // Open the altitude control panel
-    const altToolbarBtn = screen.getByTitle('Adjust altitude');
+    const altToolbarBtn = screen.getByTitle('Scale terrain elevation');
     fireEvent.click(altToolbarBtn);
 
     // Find the Altitude Multiplier label
