@@ -94,29 +94,32 @@ export default function HomePage() {
           </div>
           
           <div className="mb-6">
-            <label htmlFor="lowPolyMode" className="block text-sm font-medium text-slate-700 mb-1.5">
-              LowPoly
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Model Style
             </label>
-            <div className="toggle-container">
-              <p className="text-sm text-slate-700">Fewer triangles, lighter model</p>
-              <div className="relative inline-block w-12 mr-1 align-middle select-none">
-                <input 
-                  type="checkbox" 
-                  id="lowPolyMode" 
-                  name="lowPolyMode" 
-                  checked={lowPolyMode}
-                  onChange={e => setLowPolyMode(e.target.checked)}
-                  className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-                />
-                <label 
-                  htmlFor="lowPolyMode" 
-                  className="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"
-                ></label>
+            <div className="homepage-lowpoly-control">
+              <div className="homepage-toggle-control">
+                <span className={`homepage-status-text ${lowPolyMode ? 'active' : ''}`}>
+                  {lowPolyMode ? 'Low Poly' : 'Detailed'}
+                </span>
+                <label className="homepage-toggle-switch">
+                  <input 
+                    type="checkbox" 
+                    className="homepage-toggle-input"
+                    checked={lowPolyMode}
+                    onChange={e => setLowPolyMode(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="homepage-toggle-slider"></span>
+                </label>
               </div>
+              <p className="text-xs text-slate-500 mt-2">
+                {lowPolyMode 
+                  ? 'Clean low poly geometry with minimal triangles' 
+                  : 'Rich detail with smooth curves'
+                }
+              </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Clean, minimal aesthetic with geometric look
-            </p>
           </div>
 
           <button
