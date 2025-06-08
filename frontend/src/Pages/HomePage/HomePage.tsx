@@ -45,36 +45,61 @@ export default function HomePage() {
             onAltMultChange={(altMult) => updateModelConfig({ altMult })}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-            <div>
-              <label htmlFor="gridRes" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Detail Level
-              </label>
-              <input
-                type="number"
-                id="gridRes"
-                value={gridRes}
-                onChange={e => updateModelConfig({ gridRes: +e.target.value })}
-                min={1}
-                className="input-field w-full focus:outline-none"
-              />
-              <p className="text-xs text-slate-500 mt-1">Higher values increase model detail</p>
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Detail Level
+            </label>
+            <div className="detail-level-presets">
+              <button 
+                className={`detail-preset-button ${gridRes === 100 ? 'active' : ''}`}
+                onClick={() => updateModelConfig({ gridRes: 100 })}
+                disabled={loading}
+                title="Low detail (100)"
+                type="button"
+              >
+                <div className="detail-icon low"></div>
+                <span>Low</span>
+              </button>
+              
+              <button 
+                className={`detail-preset-button ${gridRes === 1000 ? 'active' : ''}`}
+                onClick={() => updateModelConfig({ gridRes: 1000 })}
+                disabled={loading}
+                title="Medium detail (1000)"
+                type="button"
+              >
+                <div className="detail-icon medium"></div>
+                <span>Medium</span>
+              </button>
+              
+              <button 
+                className={`detail-preset-button ${gridRes === 2500 ? 'active' : ''}`}
+                onClick={() => updateModelConfig({ gridRes: 2500 })}
+                disabled={loading}
+                title="High detail (2500)"
+                type="button"
+              >
+                <div className="detail-icon high"></div>
+                <span>High</span>
+              </button>
             </div>
-            <div>
-              <label htmlFor="coverageFactor" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Coverage Factor
-              </label>
-              <input
-                type="number"
-                id="coverageFactor"
-                value={coverageFactor}
-                onChange={e => updateModelConfig({ coverageFactor: +e.target.value })}
-                min={1}
-                step={0.05}
-                className="input-field w-full focus:outline-none"
-              />
-              <p className="text-xs text-slate-500 mt-1">Determines how much surrounding terrain is included in your model</p>
-            </div>
+            <p className="text-xs text-slate-500 mt-2">Choose the level of detail for your 3D model</p>
+          </div>
+
+          <div className="mb-5">
+            <label htmlFor="coverageFactor" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Coverage Factor
+            </label>
+            <input
+              type="number"
+              id="coverageFactor"
+              value={coverageFactor}
+              onChange={e => updateModelConfig({ coverageFactor: +e.target.value })}
+              min={1}
+              step={0.05}
+              className="input-field w-full focus:outline-none"
+            />
+            <p className="text-xs text-slate-500 mt-1">Determines how much surrounding terrain is included in your model</p>
           </div>
 
           <div className="mb-6">
