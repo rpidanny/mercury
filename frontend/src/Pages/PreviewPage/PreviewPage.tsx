@@ -172,7 +172,7 @@ export default function PreviewPage() {
             activeControl={activeControl}
             toggleControl={toggleControl}
             isChanging={isWidthChanging}
-            title="Adjust model size"
+            title="Resize your 3D model"
             disabled={loading}
             icon={<WidthIcon />}
           >
@@ -184,7 +184,7 @@ export default function PreviewPage() {
                   className={`size-preset-button ${widthMM <= 100 ? 'active' : ''}`}
                   onClick={() => handleWidthChange(100)}
                   disabled={loading || widthMM === 100}
-                  title="Small (100mm)"
+                  title="Small model (100mm)"
                   type="button"
                 >
                   <div className="size-icon small"></div>
@@ -195,7 +195,7 @@ export default function PreviewPage() {
                   className={`size-preset-button ${widthMM > 100 && widthMM <= 250 ? 'active' : ''}`}
                   onClick={() => handleWidthChange(250)}
                   disabled={loading || widthMM === 250}
-                  title="Medium (250mm)"
+                  title="Medium model (250mm)"
                   type="button"
                 >
                   <div className="size-icon medium"></div>
@@ -206,7 +206,7 @@ export default function PreviewPage() {
                   className={`size-preset-button ${widthMM > 250 ? 'active' : ''}`}
                   onClick={() => handleWidthChange(500)}
                   disabled={loading || widthMM === 500}
-                  title="Large (500mm)"
+                  title="Large model (500mm)"
                   type="button"
                 >
                   <div className="size-icon large"></div>
@@ -235,7 +235,7 @@ export default function PreviewPage() {
               </div>
             </div>
           </ToolbarControl>
-          <span className="tooltip">Adjust model size</span>
+          <span className="tooltip">Resize your 3D model</span>
         </div>
         
         {/* Shape selector control */}
@@ -244,14 +244,14 @@ export default function PreviewPage() {
             name="shape"
             activeControl={activeControl}
             toggleControl={toggleControl}
-            title="Change shape"
+            title="Choose base shape"
             disabled={loading}
             icon={<ShapeIcon />}
           >
             <button 
               className={`shape-button ${isShapeActive('hexagon')}`} 
               onClick={() => handleShapeChange('hexagon')}
-              title="Hexagon shape"
+              title="Hexagon base"
               disabled={loading}
             >
               <HexagonIcon />
@@ -259,7 +259,7 @@ export default function PreviewPage() {
             <button 
               className={`shape-button ${isShapeActive('square')}`} 
               onClick={() => handleShapeChange('square')}
-              title="Square shape"
+              title="Square base"
               disabled={loading}
             >
               <SquareIcon />
@@ -267,13 +267,13 @@ export default function PreviewPage() {
             <button 
               className={`shape-button ${isShapeActive('circle')}`} 
               onClick={() => handleShapeChange('circle')}
-              title="Circle shape"
+              title="Circle base"
               disabled={loading}
             >
               <CircleIcon />
             </button>
           </ToolbarControl>
-          <span className="tooltip">Change model shape</span>
+          <span className="tooltip">Choose base shape</span>
         </div>
         
         {/* Altitude multiplier control */}
@@ -283,7 +283,7 @@ export default function PreviewPage() {
             activeControl={activeControl}
             toggleControl={toggleControl}
             isChanging={isAltitudeChanging}
-            title="Adjust altitude"
+            title="Scale terrain elevation"
             disabled={loading}
             icon={<AltitudeIcon />}
           >
@@ -309,7 +309,7 @@ export default function PreviewPage() {
               </div>
             </div>
           </ToolbarControl>
-          <span className="tooltip">Adjust terrain height</span>
+          <span className="tooltip">Scale terrain elevation</span>
         </div>
         
         {/* Rotation control */}
@@ -319,7 +319,7 @@ export default function PreviewPage() {
             activeControl={activeControl}
             toggleControl={toggleControl}
             isChanging={isRotating}
-            title="Rotate terrain"
+            title="Rotate your model"
             disabled={loading}
             icon={<RotationIcon />}
           >
@@ -341,7 +341,7 @@ export default function PreviewPage() {
               <span className="rotation-value">{rotationAngle}°</span>
             </div>
           </ToolbarControl>
-          <span className="tooltip">Rotate terrain model</span>
+          <span className="tooltip">Rotate your model</span>
         </div>
         
         {/* LowPoly control */}
@@ -350,7 +350,7 @@ export default function PreviewPage() {
             name="lowpoly"
             activeControl={activeControl}
             toggleControl={toggleControl}
-            title="Toggle LowPoly mode"
+            title="Switch between detailed & low poly styles"
             disabled={loading}
             icon={<LowPolyIcon />}
           >
@@ -381,7 +381,7 @@ export default function PreviewPage() {
               </div>
             </div>
           </ToolbarControl>
-          <span className="tooltip">Toggle geometric style</span>
+          <span className="tooltip">Switch between detailed & low poly styles</span>
         </div>
       </div>
     </>
