@@ -12,10 +12,11 @@ vi.mock('./context/AppContext', () => {
         shape: 'hexagon', 
         widthMM: 100, 
         altMult: 1,
-        gridRes: 500,
-        coverageFactor: 4.0,
+        modelResolution: 500,
+        paddingFactor: 4.0,
         embossText: '',
-        rotationAngle: 0 
+        rotationAngle: 0,
+        lowPolyMode: false
       },
       file: null,
       resources: { font: null, terrainData: null }
@@ -23,7 +24,8 @@ vi.mock('./context/AppContext', () => {
     dispatch: mockDispatch,
     updateModelConfig: vi.fn(),
     setLoading: vi.fn(),
-    resetTerrain: vi.fn()
+    resetTerrain: vi.fn(),
+    setLowPolyMode: vi.fn()
   };
   
   return {
@@ -170,10 +172,11 @@ describe('App', () => {
           shape: 'hexagon', 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -181,7 +184,8 @@ describe('App', () => {
       dispatch: vi.fn(),
       updateModelConfig: vi.fn(),
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
     
     render(<App />);
@@ -197,10 +201,11 @@ describe('App', () => {
           shape: 'hexagon', 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { font: null, terrainData: createMockTerrainData() }
@@ -208,7 +213,8 @@ describe('App', () => {
       dispatch: vi.fn(),
       updateModelConfig: vi.fn(),
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
     
     render(<App />);
@@ -226,10 +232,11 @@ describe('App', () => {
           shape: 'hexagon', 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -237,7 +244,8 @@ describe('App', () => {
       dispatch: mockDispatch,
       updateModelConfig: vi.fn(),
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
     
     render(<App />);

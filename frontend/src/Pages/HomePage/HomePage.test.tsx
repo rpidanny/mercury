@@ -14,7 +14,7 @@ describe('HomePage', () => {
   it('renders the component with title', () => {
     render(<HomePage />, { wrapper: TestWrapper });
     expect(screen.getByText('Mercury')).toBeInTheDocument();
-    expect(screen.getByText('Transform your adventure into stunning 3D terrain')).toBeInTheDocument();
+    expect(screen.getByText('Transform your GPS adventures into stunning 3D terrain models')).toBeInTheDocument();
   });
 
   it('handles file input changes', async () => {
@@ -27,10 +27,11 @@ describe('HomePage', () => {
           shape: 'hexagon', 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -38,7 +39,8 @@ describe('HomePage', () => {
       dispatch: mockDispatch,
       updateModelConfig: vi.fn(),
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
 
     render(<HomePage />);
@@ -65,10 +67,11 @@ describe('HomePage', () => {
           shape: 'hexagon', 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -76,24 +79,25 @@ describe('HomePage', () => {
       dispatch: vi.fn(),
       updateModelConfig: mockUpdateModelConfig,
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
 
     render(<HomePage />);
     
-    // Test grid resolution input
-    const gridResInput = screen.getByLabelText(/detail level/i);
-    fireEvent.change(gridResInput, { target: { value: '600' } });
-    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ gridRes: 600 });
+    // Test model resolution buttons - click the "Med" button
+    const medButton = screen.getByText('Med');
+    fireEvent.click(medButton);
+    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ modelResolution: 1000 });
     
-    // Test coverage factor input
-    const coverageInput = screen.getByLabelText(/coverage factor/i);
-    fireEvent.change(coverageInput, { target: { value: '5.5' } });
-    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ coverageFactor: 5.5 });
+    // Test padding factor input
+    const paddingInput = screen.getByLabelText(/padding factor/i);
+    fireEvent.change(paddingInput, { target: { value: '5.5' } });
+    expect(mockUpdateModelConfig).toHaveBeenCalledWith({ paddingFactor: 5.5 });
     
     // Test emboss text input
-    const textArea = screen.getByLabelText(/personalize your model/i);
-    fireEvent.change(textArea, { target: { value: 'My Adventure' } });
+    const textInput = screen.getByLabelText(/personal touch/i);
+    fireEvent.change(textInput, { target: { value: 'My Adventure' } });
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ embossText: 'My Adventure' });
   });
 
@@ -111,10 +115,11 @@ describe('HomePage', () => {
           shape: 'hexagon', 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -122,7 +127,8 @@ describe('HomePage', () => {
       dispatch: vi.fn(),
       updateModelConfig: vi.fn(),
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
 
     render(<HomePage />);
@@ -137,15 +143,16 @@ describe('HomePage', () => {
     // Mock context with loading state
     vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
       state: {
-        ui: { loading: true, status: 'Creating Your Model...' },
+        ui: { loading: true, status: 'Creating Magic...' },
         modelConfig: { 
           shape: 'hexagon', 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
-          rotationAngle: 0 
+          rotationAngle: 0,
+          lowPolyMode: false
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -153,12 +160,18 @@ describe('HomePage', () => {
       dispatch: vi.fn(),
       updateModelConfig: vi.fn(),
       setLoading: vi.fn(),
-      resetTerrain: vi.fn()
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
     });
 
     render(<HomePage />);
     
-    const generateButton = screen.getByText('Creating Your Model...');
+    // Find the button that contains the loading text
+    const loadingText = screen.getByText('Creating Magic...');
+    const generateButton = loadingText.closest('button');
+    
+    expect(generateButton).not.toBeNull();
     expect(generateButton).toBeDisabled();
+    expect(loadingText).toBeInTheDocument();
   });
 }); 

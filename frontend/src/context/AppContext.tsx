@@ -9,8 +9,8 @@ type AppState = {
     shape: ShapeType;
     widthMM: number;
     altMult: number;
-    gridRes: number;
-    coverageFactor: number;
+    modelResolution: number;
+    paddingFactor: number;
     embossText: string;
     rotationAngle: number;
     lowPolyMode: boolean;
@@ -42,8 +42,8 @@ const initialState: AppState = {
     shape: 'hexagon',
     widthMM: 100,
     altMult: 1,
-    gridRes: 500,
-    coverageFactor: 4.0,
+    modelResolution: 100,
+    paddingFactor: 4.0,
     embossText: '',
     rotationAngle: 0,
     lowPolyMode: false

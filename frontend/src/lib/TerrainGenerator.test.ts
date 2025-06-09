@@ -64,7 +64,7 @@ describe("TerrainGenerator", () => {
     ]);
 
     // Create a simple mock implementation of generate for our tests
-    TerrainGenerator.generate = vi.fn(async (points, gridRes) => {
+    TerrainGenerator.generate = vi.fn(async (points, modelResolution) => {
       // Still call the validation function to test error cases
       if (points.length < 2) {
         throw new Error("Need at least 2 track points to generate terrain.");
@@ -77,7 +77,7 @@ describe("TerrainGenerator", () => {
           max_latitude: 37.776,
           max_longitude: -122.418,
         },
-        gridRes || Config.TERRAIN_GRID_RESOLUTION
+        modelResolution || Config.TERRAIN_GRID_RESOLUTION
       );
 
       await mockFetch(
@@ -86,12 +86,12 @@ describe("TerrainGenerator", () => {
 
       // Return mock terrain data for our tests
       return {
-        grid: Array(gridRes || 50)
+        grid: Array(modelResolution || 50)
           .fill(null)
-          .map(() => Array(gridRes || 50).fill(10)),
+          .map(() => Array(modelResolution || 50).fill(10)),
         bounds: {
           min: { x: 0, y: 0 },
-          max: { x: gridRes || 50, y: gridRes || 50 },
+          max: { x: modelResolution || 50, y: modelResolution || 50 },
         },
         geoToXY: (lat: number, lon: number) => ({
           x: lat - 37.77,
@@ -251,11 +251,11 @@ describe("TerrainGenerator", () => {
   ];
 
   it("generates terrain data from points", async () => {
-    const gridRes = 50;
+    const modelResolution = 50;
 
     const result = (await TerrainGenerator.generate(
       mockPoints,
-      gridRes
+      modelResolution
     )) as TerrainData & {
       grid: number[][];
       bounds: { min: { x: number; y: number }; max: { x: number; y: number } };
@@ -275,41 +275,43 @@ describe("TerrainGenerator", () => {
   });
 
   it("handles empty point set gracefully", async () => {
-    const gridRes = 50;
+    const modelResolution = 50;
 
     // Expect it to throw on empty points
-    await expect(TerrainGenerator.generate([], gridRes)).rejects.toThrow();
+    await expect(
+      TerrainGenerator.generate([], modelResolution)
+    ).rejects.toThrow();
   });
 
   it("handles single point correctly", async () => {
-    const gridRes = 50;
+    const modelResolution = 50;
     const singlePoint = [{ lat: 37.7749, lon: -122.4194 }];
 
     // This should throw since we need at least 2 points
     await expect(
-      TerrainGenerator.generate(singlePoint, gridRes)
+      TerrainGenerator.generate(singlePoint, modelResolution)
     ).rejects.toThrow("Need at least 2 track points to generate terrain.");
   });
 
   it("respects grid resolution parameter", async () => {
-    const gridRes = 10; // Small grid for easy testing
+    const modelResolution = 10; // Small grid for easy testing
 
     const result = (await TerrainGenerator.generate(
       mockPoints,
-      gridRes
+      modelResolution
     )) as TerrainData & {
       grid: number[][];
       bounds: { min: { x: number; y: number }; max: { x: number; y: number } };
     };
 
     // Grid dimensions should reflect requested resolution
-    expect(result.grid.length).toBeLessThanOrEqual(gridRes + 2); // Allow small padding
-    expect(result.grid[0].length).toBeLessThanOrEqual(gridRes + 2);
+    expect(result.grid.length).toBeLessThanOrEqual(modelResolution + 2); // Allow small padding
+    expect(result.grid[0].length).toBeLessThanOrEqual(modelResolution + 2);
   });
 
   it("applies coverage factor correctly", async () => {
     // Test with two different coverage factors
-    const gridRes = 50;
+    const modelResolution = 50;
     const smallCoverage = 1.0;
     const largeCoverage = 4.0;
 
@@ -366,7 +368,7 @@ describe("TerrainGenerator", () => {
 
     const resultSmall = (await TerrainGenerator.generate(
       mockPoints,
-      gridRes,
+      modelResolution,
       smallCoverage
     )) as TerrainData & {
       grid: number[][];
@@ -374,7 +376,7 @@ describe("TerrainGenerator", () => {
     };
     const resultLarge = (await TerrainGenerator.generate(
       mockPoints,
-      gridRes,
+      modelResolution,
       largeCoverage
     )) as TerrainData & {
       grid: number[][];

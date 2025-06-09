@@ -27,8 +27,8 @@ export const useTerrain = () => {
         const points = GPXParser.parse(text, 10);
         
         setLoading(true, 'Getting terrain data...');
-        const coverageFactor = modelConfig.coverageFactor ?? modelConfig.coverageFactor;
-        const data = await TerrainGenerator.generate(points, modelConfig.gridRes, coverageFactor);
+            const paddingFactor = modelConfig.paddingFactor ?? modelConfig.paddingFactor;
+    const data = await TerrainGenerator.generate(points, modelConfig.modelResolution, paddingFactor);
         dispatch({ type: 'SET_TERRAIN_DATA', payload: data });
       }
     } catch (err: unknown) {
@@ -39,7 +39,7 @@ export const useTerrain = () => {
     } finally {
       setLoading(false);
     }
-  }, [file, font, modelConfig.embossText, modelConfig.gridRes, modelConfig.coverageFactor, modelConfig.coverageFactor, terrainData, dispatch, setLoading]);
+  }, [file, font, modelConfig.embossText, modelConfig.modelResolution, modelConfig.paddingFactor, terrainData, dispatch, setLoading]);
 
   return { generateTerrain };
 }; 

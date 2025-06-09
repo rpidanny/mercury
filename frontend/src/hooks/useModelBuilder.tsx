@@ -120,13 +120,13 @@ export const useModelBuilder = () => {
     const originalFileName = state.file?.name.replace(/\.[^/.]+$/, '') || 'model';
     
     // Get render configs
-    const { gridRes, coverageFactor } = modelConfig;
+    const { modelResolution, paddingFactor } = modelConfig;
     
     // Create timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
     
     // Construct the filename with configs and timestamp
-    a.download = `${originalFileName}_res${gridRes}_pad${coverageFactor}_${timestamp}.stl`;
+          a.download = `${originalFileName}_res${modelResolution}_pad${paddingFactor}_${timestamp}.stl`;
     
     a.click();
     URL.revokeObjectURL(url);

@@ -37,8 +37,8 @@ describe('PreviewPage', () => {
         shape: 'hexagon' as ShapeType, 
         widthMM: 100, 
         altMult: 1,
-        gridRes: 500,
-        coverageFactor: 4.0,
+        modelResolution: 500,
+        paddingFactor: 4.0,
         embossText: '',
         rotationAngle: 0,
         lowPolyMode: false
@@ -144,8 +144,8 @@ describe('PreviewPage', () => {
           shape: 'hexagon' as ShapeType, 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
           lowPolyMode: false
@@ -196,8 +196,8 @@ describe('PreviewPage', () => {
           shape: 'hexagon' as ShapeType, 
           widthMM: 100, 
           altMult: 1,
-          gridRes: 500,
-          coverageFactor: 4.0,
+          modelResolution: 500,
+          paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
           lowPolyMode: false

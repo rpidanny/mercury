@@ -19,7 +19,7 @@ export default class TerrainGenerator {
   static async generate(
     trackPoints: LatLon[],
     resolution: number = Config.TERRAIN_GRID_RESOLUTION,
-    coverageFactor: number = Config.HEX_PADDING_FACTOR_DEFAULT
+    paddingFactor: number = Config.HEX_PADDING_FACTOR_DEFAULT
   ): Promise<TerrainData> {
     this.validateTrackPoints(trackPoints);
 
@@ -29,7 +29,7 @@ export default class TerrainGenerator {
 
     const rectExtents = this.computeRectangularExtents(
       trackPointsXY,
-      coverageFactor
+      paddingFactor
     );
     const { apiBounds, boundsGeo } = this.createBounds(rectExtents, xyToGeo);
 
@@ -97,7 +97,7 @@ export default class TerrainGenerator {
 
   private static computeRectangularExtents(
     pointsXY: { x: number; y: number }[],
-    coverageFactor: number
+    paddingFactor: number
   ): {
     regionMinX: number;
     regionMaxX: number;
@@ -113,8 +113,8 @@ export default class TerrainGenerator {
     const maxY = Math.max(...ys);
     const widthOrig = maxX - minX;
     const heightOrig = maxY - minY;
-    const widthGeo = widthOrig * coverageFactor;
-    const heightGeo = heightOrig * coverageFactor;
+    const widthGeo = widthOrig * paddingFactor;
+    const heightGeo = heightOrig * paddingFactor;
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     return {
