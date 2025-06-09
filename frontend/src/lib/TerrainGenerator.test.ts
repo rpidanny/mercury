@@ -309,7 +309,7 @@ describe("TerrainGenerator", () => {
     expect(result.grid[0].length).toBeLessThanOrEqual(modelResolution + 2);
   });
 
-  it("applies coverage factor correctly", async () => {
+  it("applies coverage factor correctly and generates square terrain", async () => {
     // Test with two different coverage factors
     const modelResolution = 50;
     const smallCoverage = 1.0;
@@ -322,7 +322,7 @@ describe("TerrainGenerator", () => {
       .mockImplementationOnce(
         async () =>
           ({
-            // Small coverage result
+            // Small coverage result - should be square
             grid: [[10]],
             bounds: {
               min: { x: -10, y: -10 },
@@ -345,7 +345,7 @@ describe("TerrainGenerator", () => {
       .mockImplementationOnce(
         async () =>
           ({
-            // Large coverage result
+            // Large coverage result - should be square
             grid: [[10]],
             bounds: {
               min: { x: -40, y: -40 },
@@ -392,6 +392,10 @@ describe("TerrainGenerator", () => {
     // Larger coverage should result in a larger terrain size
     expect(largeWidth).toBeGreaterThan(smallWidth);
     expect(largeHeight).toBeGreaterThan(smallHeight);
+
+    // Terrain should be square (width should equal height)
+    expect(smallWidth).toEqual(smallHeight);
+    expect(largeWidth).toEqual(largeHeight);
 
     // Restore the original for other tests
     TerrainGenerator.generate = originalGenerateTemp;

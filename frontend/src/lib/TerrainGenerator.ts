@@ -113,16 +113,19 @@ export default class TerrainGenerator {
     const maxY = Math.max(...ys);
     const widthOrig = maxX - minX;
     const heightOrig = maxY - minY;
-    const widthGeo = widthOrig * paddingFactor;
-    const heightGeo = heightOrig * paddingFactor;
+
+    // Use the maximum dimension to create a square terrain
+    const maxDimension = Math.max(widthOrig, heightOrig);
+    const squareSize = maxDimension * paddingFactor;
+
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     return {
-      regionMinX: centerX - widthGeo,
-      regionMaxX: centerX + widthGeo,
-      regionMinY: centerY - heightGeo,
-      regionMaxY: centerY + heightGeo,
-      widthGeo,
+      regionMinX: centerX - squareSize,
+      regionMaxX: centerX + squareSize,
+      regionMinY: centerY - squareSize,
+      regionMaxY: centerY + squareSize,
+      widthGeo: squareSize,
     };
   }
 
