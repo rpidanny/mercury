@@ -355,7 +355,7 @@ export default function PreviewPage() {
             icon={<LowPolyIcon />}
           >
             <div className="lowpoly-control-container">
-              <label className="lowpoly-label">Model Style</label>
+              <label className="lowpoly-label">Model Detail</label>
               <div className="lowpoly-toggle-wrapper">
                 <div className="lowpoly-toggle-control">
                   <span className={`lowpoly-status-text ${lowPolyMode ? 'active' : ''}`}>

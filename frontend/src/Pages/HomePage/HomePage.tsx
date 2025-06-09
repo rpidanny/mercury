@@ -156,10 +156,10 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Personal Message */}
+                {/* Custom Engraving */}
                 <div>
                   <label htmlFor="embossText" className="block text-sm font-medium text-slate-800 mb-2">
-                    Personal Touch
+                    Custom Engraving
                   </label>
                   <input
                     type="text"
@@ -168,14 +168,15 @@ export default function HomePage() {
                     onChange={e => updateModelConfig({ embossText: e.target.value })}
                     maxLength={50}
                     className="w-full p-3 border border-slate-200/60 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-sm"
-                    placeholder="Add your mark..."
+                    placeholder="Engrave your message..."
                   />
+                  <p className="text-xs text-slate-500 mt-1">Text that will be permanently engraved into your model</p>
                 </div>
 
-                {/* Style Toggle */}
+                {/* Model Detail Toggle */}
                 <div>
                   <label className="block text-sm font-medium text-slate-800 mb-2">
-                    Style
+                    Model Detail
                   </label>
                   <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
                     <span className="text-sm text-slate-600 flex-1">
@@ -192,6 +193,7 @@ export default function HomePage() {
                       <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-slate-900"></div>
                     </label>
                   </div>
+                  <p className="text-xs text-slate-500 mt-1">Choose between smooth detailed geometry or clean low poly surfaces</p>
                 </div>
               </div>
 

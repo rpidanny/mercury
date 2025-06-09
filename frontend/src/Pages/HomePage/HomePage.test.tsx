@@ -85,9 +85,9 @@ describe('HomePage', () => {
 
     render(<HomePage />);
     
-    // Test model resolution buttons - click the "Med" button
-    const medButton = screen.getByText('Med');
-    fireEvent.click(medButton);
+    // Test model resolution buttons - click the "Medium" button
+    const mediumButton = screen.getByText('Medium');
+    fireEvent.click(mediumButton);
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ modelResolution: 1000 });
     
     // Test padding factor input
@@ -96,7 +96,7 @@ describe('HomePage', () => {
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ paddingFactor: 5.5 });
     
     // Test emboss text input
-    const textInput = screen.getByLabelText(/personal touch/i);
+    const textInput = screen.getByLabelText(/custom engraving/i);
     fireEvent.change(textInput, { target: { value: 'My Adventure' } });
     expect(mockUpdateModelConfig).toHaveBeenCalledWith({ embossText: 'My Adventure' });
   });
