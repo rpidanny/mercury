@@ -35,7 +35,8 @@ export default class ModelBuilder {
     embossText: string,
     font: Font | null,
     rotationAngle: number = 0,
-    lowPolyMode: boolean = false
+    lowPolyMode: boolean = false,
+    textPlatformHeightOverride?: number
   ): BuildResult {
     const builder = new ModelBuilder();
 
@@ -48,7 +49,8 @@ export default class ModelBuilder {
         embossText,
         font,
         rotationAngle,
-        lowPolyMode
+        lowPolyMode,
+        textPlatformHeightOverride
       );
     } catch (error) {
       console.error("Error building model:", error);
@@ -81,7 +83,8 @@ export default class ModelBuilder {
     embossText: string,
     font: Font | null,
     rotationAngle: number = 0,
-    lowPolyMode: boolean = false
+    lowPolyMode: boolean = false,
+    textPlatformHeightOverride?: number
   ): BuildResult {
     // Store parameters
     this.data = data;
@@ -111,7 +114,8 @@ export default class ModelBuilder {
     const hasText = Boolean(embossText && font);
     const { platformGeo, textGeo, textOverlapWarning } = this.buildTextEffects(
       embossText,
-      font
+      font,
+      textPlatformHeightOverride
     );
 
     // 4. Create materials and meshes
@@ -586,7 +590,8 @@ export default class ModelBuilder {
 
   private buildTextEffects(
     embossText: string,
-    font: Font | null
+    font: Font | null,
+    textPlatformHeightOverride?: number
   ): {
     platformGeo: THREE.BufferGeometry;
     textGeo: THREE.BufferGeometry;
@@ -606,7 +611,9 @@ export default class ModelBuilder {
       const pWidth = Math.max(1, hexRadius * Config.TEXT_PLATFORM_WIDTH_FACTOR);
       const pDepth = Math.max(1, hexRadius * Config.TEXT_PLATFORM_DEPTH_FACTOR);
       const height =
-        this.terrainMaxZ + Config.TEXT_PLATFORM_HEIGHT_OFFSET - this.baseZ;
+        textPlatformHeightOverride !== undefined
+          ? textPlatformHeightOverride
+          : this.terrainMaxZ + Config.TEXT_PLATFORM_HEIGHT_OFFSET - this.baseZ;
       const yCenter = -hexRadius + margin + pDepth / 2;
 
       // Check for overlap with path
