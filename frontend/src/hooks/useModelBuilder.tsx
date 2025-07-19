@@ -115,21 +115,33 @@ export const useModelBuilder = () => {
     return `${originalFileName}_res${modelResolution}_pad${paddingFactor}_${timestamp}.stl`;
   }, [state.file, modelConfig]);
 
-  // Handle download functionality using the STL exporter
+  // Handle download functionality using the STL exporter with progress callbacks
   const downloadModel = useCallback(async () => {
     if (!localMesh || !stlExporterRef.current) return;
 
     try {
-      setLoading(true, 'Preparing 3D printable mesh...');
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Generate STL string using the STL exporter class with progress callbacks
+      const stlString = stlExporterRef.current.generateSTL(localMesh, {
+        callbacks: {
+          onCollectingGeometries: () => {
+            setLoading(true, 'Collecting mesh geometries...');
+          },
+          onProcessingOrientations: () => {
+            setLoading(true, 'Processing face orientations...');
+          },
+          onCreatingManifold: () => {
+            setLoading(true, 'Creating manifold mesh...');
+          },
+          onRemovingDegenerateTriangles: () => {
+            setLoading(true, 'Optimizing geometry...');
+          },
+          onGeneratingSTL: () => {
+            setLoading(true, 'Generating STL format...');
+          }
+        }
+      });
       
-      setLoading(true, 'Converting to STL format...');
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Generate STL string using the STL exporter class
-      const stlString = stlExporterRef.current.generateSTL(localMesh);
-      
-      setLoading(true, 'Saving file...');
+      setLoading(true, 'Preparing download...');
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Create blob and download

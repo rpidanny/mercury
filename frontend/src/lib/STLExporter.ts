@@ -3,6 +3,18 @@ import { STLExporter as ThreeSTLExporter } from "three/examples/jsm/exporters/ST
 import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
+export interface STLExportCallbacks {
+  onCollectingGeometries?: () => void;
+  onProcessingOrientations?: () => void;
+  onCreatingManifold?: () => void;
+  onRemovingDegenerateTriangles?: () => void;
+  onGeneratingSTL?: () => void;
+}
+
+export interface STLExportOptions {
+  callbacks?: STLExportCallbacks;
+}
+
 export class STLExporter {
   private exporter: ThreeSTLExporter;
 
@@ -13,7 +25,12 @@ export class STLExporter {
   /**
    * Creates a properly manifold mesh for 3D printing by rebuilding geometry connections
    */
-  private createPrintableMesh(group: Object3D): BufferGeometry {
+  private createPrintableMesh(
+    group: Object3D,
+    callbacks?: STLExportCallbacks
+  ): BufferGeometry {
+    callbacks?.onCollectingGeometries?.();
+
     const allVertices: number[] = [];
     const allIndices: number[] = [];
     let vertexOffset = 0;
@@ -51,6 +68,8 @@ export class STLExporter {
         }
       }
     });
+
+    callbacks?.onProcessingOrientations?.();
 
     // Step 2: Process each geometry with consistent face orientation
     for (const { positions, isBackSide } of processedGeometries) {
@@ -99,7 +118,7 @@ export class STLExporter {
       throw new Error("No valid geometries found to export");
     }
 
-    return this.createManifoldGeometry(allVertices, allIndices);
+    return this.createManifoldGeometry(allVertices, allIndices, callbacks);
   }
 
   /**
@@ -107,8 +126,11 @@ export class STLExporter {
    */
   private createManifoldGeometry(
     vertices: number[],
-    indices: number[]
+    indices: number[],
+    callbacks?: STLExportCallbacks
   ): BufferGeometry {
+    callbacks?.onCreatingManifold?.();
+
     // Create geometry with merged vertices to eliminate duplicates
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
@@ -122,13 +144,18 @@ export class STLExporter {
     mergedGeometry.computeVertexNormals();
 
     // Remove degenerate triangles and create final clean geometry
-    return this.removeDegenearteTriangles(mergedGeometry);
+    return this.removeDegenearteTriangles(mergedGeometry, callbacks);
   }
 
   /**
    * Removes degenerate triangles (triangles with zero area)
    */
-  private removeDegenearteTriangles(geometry: BufferGeometry): BufferGeometry {
+  private removeDegenearteTriangles(
+    geometry: BufferGeometry,
+    callbacks?: STLExportCallbacks
+  ): BufferGeometry {
+    callbacks?.onRemovingDegenerateTriangles?.();
+
     const positions = geometry.attributes.position.array as Float32Array;
     const indices = geometry.index?.array;
 
@@ -188,10 +215,14 @@ export class STLExporter {
   /**
    * Converts a 3D model to STL format and returns the STL string
    */
-  generateSTL(mesh: Object3D): string {
+  generateSTL(mesh: Object3D, options?: STLExportOptions): string {
+    const callbacks = options?.callbacks;
+
     // Create a printable mesh
-    const printableGeometry = this.createPrintableMesh(mesh);
+    const printableGeometry = this.createPrintableMesh(mesh, callbacks);
     const printableMesh = new THREE.Mesh(printableGeometry);
+
+    callbacks?.onGeneratingSTL?.();
 
     // Export to STL string
     return this.exporter.parse(printableMesh);
