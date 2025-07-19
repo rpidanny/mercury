@@ -4,11 +4,11 @@ import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 export interface STLExportCallbacks {
-  onCollectingGeometries?: () => void;
-  onProcessingOrientations?: () => void;
-  onCreatingManifold?: () => void;
-  onRemovingDegenerateTriangles?: () => void;
-  onGeneratingSTL?: () => void;
+  onCollectingGeometries?: () => Promise<void>;
+  onProcessingOrientations?: () => Promise<void>;
+  onCreatingManifold?: () => Promise<void>;
+  onRemovingDegenerateTriangles?: () => Promise<void>;
+  onGeneratingSTL?: () => Promise<void>;
 }
 
 export interface STLExportOptions {
@@ -25,11 +25,11 @@ export class STLExporter {
   /**
    * Creates a properly manifold mesh for 3D printing by rebuilding geometry connections
    */
-  private createPrintableMesh(
+  private async createPrintableMesh(
     group: Object3D,
     callbacks?: STLExportCallbacks
-  ): BufferGeometry {
-    callbacks?.onCollectingGeometries?.();
+  ): Promise<BufferGeometry> {
+    await callbacks?.onCollectingGeometries?.();
 
     const allVertices: number[] = [];
     const allIndices: number[] = [];
@@ -69,7 +69,7 @@ export class STLExporter {
       }
     });
 
-    callbacks?.onProcessingOrientations?.();
+    await callbacks?.onProcessingOrientations?.();
 
     // Step 2: Process each geometry with consistent face orientation
     for (const { positions, isBackSide } of processedGeometries) {
@@ -118,18 +118,22 @@ export class STLExporter {
       throw new Error("No valid geometries found to export");
     }
 
-    return this.createManifoldGeometry(allVertices, allIndices, callbacks);
+    return await this.createManifoldGeometry(
+      allVertices,
+      allIndices,
+      callbacks
+    );
   }
 
   /**
    * Creates a manifold geometry by merging vertices and removing degenerate triangles
    */
-  private createManifoldGeometry(
+  private async createManifoldGeometry(
     vertices: number[],
     indices: number[],
     callbacks?: STLExportCallbacks
-  ): BufferGeometry {
-    callbacks?.onCreatingManifold?.();
+  ): Promise<BufferGeometry> {
+    await callbacks?.onCreatingManifold?.();
 
     // Create geometry with merged vertices to eliminate duplicates
     const geometry = new THREE.BufferGeometry();
@@ -144,17 +148,17 @@ export class STLExporter {
     mergedGeometry.computeVertexNormals();
 
     // Remove degenerate triangles and create final clean geometry
-    return this.removeDegenearteTriangles(mergedGeometry, callbacks);
+    return await this.removeDegenearteTriangles(mergedGeometry, callbacks);
   }
 
   /**
    * Removes degenerate triangles (triangles with zero area)
    */
-  private removeDegenearteTriangles(
+  private async removeDegenearteTriangles(
     geometry: BufferGeometry,
     callbacks?: STLExportCallbacks
-  ): BufferGeometry {
-    callbacks?.onRemovingDegenerateTriangles?.();
+  ): Promise<BufferGeometry> {
+    await callbacks?.onRemovingDegenerateTriangles?.();
 
     const positions = geometry.attributes.position.array as Float32Array;
     const indices = geometry.index?.array;
@@ -215,14 +219,17 @@ export class STLExporter {
   /**
    * Converts a 3D model to STL format and returns the STL string
    */
-  generateSTL(mesh: Object3D, options?: STLExportOptions): string {
+  async generateSTL(
+    mesh: Object3D,
+    options?: STLExportOptions
+  ): Promise<string> {
     const callbacks = options?.callbacks;
 
     // Create a printable mesh
-    const printableGeometry = this.createPrintableMesh(mesh, callbacks);
+    const printableGeometry = await this.createPrintableMesh(mesh, callbacks);
     const printableMesh = new THREE.Mesh(printableGeometry);
 
-    callbacks?.onGeneratingSTL?.();
+    await callbacks?.onGeneratingSTL?.();
 
     // Export to STL string
     return this.exporter.parse(printableMesh);

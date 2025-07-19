@@ -121,22 +121,27 @@ export const useModelBuilder = () => {
 
     try {
       // Generate STL string using the STL exporter class with progress callbacks
-      const stlString = stlExporterRef.current.generateSTL(localMesh, {
+      const stlString = await stlExporterRef.current.generateSTL(localMesh, {
         callbacks: {
-          onCollectingGeometries: () => {
+          onCollectingGeometries: async () => {
             setLoading(true, 'Collecting mesh geometries...');
+            await new Promise(resolve => setTimeout(resolve, 200)); // Allow UI to update
           },
-          onProcessingOrientations: () => {
+          onProcessingOrientations: async () => {
             setLoading(true, 'Processing face orientations...');
+            await new Promise(resolve => setTimeout(resolve, 200)); // Allow UI to update
           },
-          onCreatingManifold: () => {
+          onCreatingManifold: async () => {
             setLoading(true, 'Creating manifold mesh...');
+            await new Promise(resolve => setTimeout(resolve, 200)); // Allow UI to update
           },
-          onRemovingDegenerateTriangles: () => {
+          onRemovingDegenerateTriangles: async () => {
             setLoading(true, 'Optimizing geometry...');
+            await new Promise(resolve => setTimeout(resolve, 200)); // Allow UI to update
           },
-          onGeneratingSTL: () => {
+          onGeneratingSTL: async () => {
             setLoading(true, 'Generating STL format...');
+            await new Promise(resolve => setTimeout(resolve, 200)); // Allow UI to update
           }
         }
       });
