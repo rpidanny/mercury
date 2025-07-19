@@ -72,7 +72,10 @@ describe("ModelBuilder", () => {
       altitudeMultiplier,
       shapeType,
       embossText,
-      font
+      font,
+      0, // rotationAngle
+      false // lowPolyMode
+      // textPlatformHeightOverride is optional and undefined
     );
 
     // Verify we get a result with a mesh and no text warning
@@ -105,7 +108,10 @@ describe("ModelBuilder", () => {
       altitudeMultiplier,
       shapeType,
       embossText,
-      font
+      font,
+      0, // rotationAngle
+      false // lowPolyMode
+      // textPlatformHeightOverride is optional and undefined
     );
 
     // Verify we get a result with a mesh
@@ -131,7 +137,9 @@ describe("ModelBuilder", () => {
       altitudeMultiplier,
       "circle",
       "",
-      null
+      null,
+      0, // rotationAngle
+      false // lowPolyMode
     );
 
     const hexagonResult = ModelBuilder.build(
@@ -140,7 +148,9 @@ describe("ModelBuilder", () => {
       altitudeMultiplier,
       "hexagon",
       "",
-      null
+      null,
+      0, // rotationAngle
+      false // lowPolyMode
     );
 
     // Models should be different
@@ -170,7 +180,9 @@ describe("ModelBuilder", () => {
       altitudeMultiplier,
       shapeType,
       "",
-      null
+      null,
+      0, // rotationAngle
+      false // lowPolyMode
     );
 
     const largeResult = ModelBuilder.build(
@@ -179,7 +191,9 @@ describe("ModelBuilder", () => {
       altitudeMultiplier,
       shapeType,
       "",
-      null
+      null,
+      0, // rotationAngle
+      false // lowPolyMode
     );
 
     // Both models should be valid
@@ -235,7 +249,9 @@ describe("ModelBuilder", () => {
       altitudeMultiplier,
       shapeType,
       "",
-      null
+      null,
+      0, // rotationAngle
+      false // lowPolyMode
     );
 
     // Verify the model was created successfully
@@ -263,7 +279,8 @@ describe("ModelBuilder", () => {
       shapeType,
       embossText,
       font,
-      0 // No rotation
+      0, // No rotation
+      false // lowPolyMode
     );
 
     // Create a model with rotation
@@ -275,7 +292,8 @@ describe("ModelBuilder", () => {
       shapeType,
       embossText,
       font,
-      rotationAngle
+      rotationAngle,
+      false // lowPolyMode
     );
 
     // Verify both models were created successfully
@@ -325,5 +343,52 @@ describe("ModelBuilder", () => {
     }
 
     expect(isDifferent).toBe(true);
+  });
+
+  it("should handle text platform height override", () => {
+    const mockTerrainData = createMockTerrainData();
+    const modelWidthMM = 100;
+    const altitudeMultiplier = 1;
+    const shapeType: ShapeType = "hexagon";
+    const embossText = "TEST";
+    const font = createMockFont();
+
+    // Create a model with custom text height override
+    const textHeightOverride = 15;
+    const result = ModelBuilder.build(
+      mockTerrainData,
+      modelWidthMM,
+      altitudeMultiplier,
+      shapeType,
+      embossText,
+      font,
+      0, // rotationAngle
+      false, // lowPolyMode
+      textHeightOverride
+    );
+
+    // Verify the model was created successfully
+    expect(result).toHaveProperty("mesh");
+    expect(result.mesh).toBeInstanceOf(THREE.Group);
+
+    // With text, we should have text platform and text meshes
+    expect(result.mesh.children.length).toBeGreaterThan(4);
+
+    // Test without height override for comparison
+    const resultWithoutOverride = ModelBuilder.build(
+      mockTerrainData,
+      modelWidthMM,
+      altitudeMultiplier,
+      shapeType,
+      embossText,
+      font,
+      0, // rotationAngle
+      false // lowPolyMode
+      // no textPlatformHeightOverride
+    );
+
+    // Both should be valid
+    expect(resultWithoutOverride).toHaveProperty("mesh");
+    expect(resultWithoutOverride.mesh).toBeInstanceOf(THREE.Group);
   });
 });

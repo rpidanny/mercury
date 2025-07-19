@@ -41,7 +41,8 @@ describe('PreviewPage', () => {
         paddingFactor: 4.0,
         embossText: '',
         rotationAngle: 0,
-        lowPolyMode: false
+        lowPolyMode: false,
+        textPlatformHeightOverride: undefined
       },
       file: null,
       resources: { 
@@ -148,7 +149,8 @@ describe('PreviewPage', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { 
@@ -200,7 +202,8 @@ describe('PreviewPage', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { 
@@ -258,5 +261,102 @@ describe('PreviewPage', () => {
     fireEvent.click(downloadButton);
 
     expect(downloadModel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows text height control when emboss text is present', () => {
+    const updateModelConfig = vi.fn();
+    const updateModel = vi.fn();
+    
+    // Override model builder hook
+    vi.spyOn(ModelBuilderHook, 'useModelBuilder').mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel,
+      downloadModel: vi.fn()
+    });
+    
+    // Override the context with emboss text
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon' as ShapeType, 
+          widthMM: 100, 
+          altMult: 1,
+          modelResolution: 500,
+          paddingFactor: 4.0,
+          embossText: 'Test Text',
+          rotationAngle: 0,
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig,
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
+    });
+
+    render(<PreviewPage />);
+
+    // Open the text height control panel
+    const textHeightToolbarBtn = screen.getByTitle('Override text platform height');
+    expect(textHeightToolbarBtn).toBeInTheDocument();
+    fireEvent.click(textHeightToolbarBtn);
+
+    // Check for text height control elements
+    expect(screen.getByText('Text Platform Height')).toBeInTheDocument();
+    expect(screen.getByTitle('Auto (default)')).toBeInTheDocument();
+    expect(screen.getByTitle('Low (5mm)')).toBeInTheDocument();
+    expect(screen.getByTitle('Medium (10mm)')).toBeInTheDocument();
+    expect(screen.getByTitle('High (20mm)')).toBeInTheDocument();
+
+    // Test clicking a preset button
+    const lowButton = screen.getByTitle('Low (5mm)');
+    fireEvent.click(lowButton);
+
+    expect(updateModelConfig).toHaveBeenCalledWith({ textPlatformHeightOverride: 5 });
+    expect(updateModel).toHaveBeenCalled();
+  });
+
+  it('hides text height control when no emboss text is present', () => {
+    // Override the context without emboss text
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon' as ShapeType, 
+          widthMM: 100, 
+          altMult: 1,
+          modelResolution: 500,
+          paddingFactor: 4.0,
+          embossText: '', // Empty text
+          rotationAngle: 0,
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig: vi.fn(),
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
+    });
+
+    render(<PreviewPage />);
+
+    // Text height control should not be present
+    const textHeightToolbarBtn = screen.queryByTitle('Override text platform height');
+    expect(textHeightToolbarBtn).not.toBeInTheDocument();
   });
 }); 
