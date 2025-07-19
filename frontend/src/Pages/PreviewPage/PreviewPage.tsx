@@ -12,7 +12,8 @@ import {
   HexagonIcon,
   SquareIcon,
   CircleIcon,
-  LowPolyIcon
+  LowPolyIcon,
+  TextHeightIcon
 } from '../../components/Icons';
 import ToolbarControl from '../../components/ToolbarControl';
 import './PreviewPage.css';
@@ -28,7 +29,7 @@ export default function PreviewPage() {
   const { state, updateModelConfig, resetTerrain, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
   const { loading } = ui;
-  const { shape, widthMM, altMult, rotationAngle, lowPolyMode } = modelConfig;
+  const { shape, widthMM, altMult, rotationAngle, lowPolyMode, embossText, textPlatformHeightOverride } = modelConfig;
   
   // Local UI state
   const [activeControl, setActiveControl] = useState<string | null>(null);
@@ -136,6 +137,32 @@ export default function PreviewPage() {
     setLowPolyMode(enabled);
     updateModel();
   }, [setLowPolyMode, updateModel]);
+
+  // Handle text platform height changes
+  const handleTextHeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateModelConfig({ textPlatformHeightOverride: parseFloat(e.target.value) });
+  }, [updateModelConfig]);
+  
+  const handleTextHeightEnd = useCallback(() => {
+    updateModel();
+  }, [updateModel]);
+
+  // Reset text platform height to default
+  const resetTextHeight = useCallback(() => {
+    updateModelConfig({ textPlatformHeightOverride: undefined });
+    updateModel();
+  }, [updateModelConfig, updateModel]);
+
+  // Handle text height preset changes
+  const handleTextHeightPreset = useCallback((height: number | undefined) => {
+    updateModelConfig({ textPlatformHeightOverride: height });
+    updateModel();
+  }, [updateModelConfig, updateModel]);
+
+  const isTextHeightPresetActive = useCallback((height: number | undefined) => {
+    if (height === undefined && textPlatformHeightOverride === undefined) return 'active';
+    return textPlatformHeightOverride === height ? 'active' : '';
+  }, [textPlatformHeightOverride]);
 
   return (
     <>
@@ -383,6 +410,92 @@ export default function PreviewPage() {
           </ToolbarControl>
           <span className="tooltip">Switch between detailed & low poly styles</span>
         </div>
+
+        {/* Text Platform Height control */}
+        {embossText && (
+          <div className="toolbar-control-wrapper">
+            <ToolbarControl
+              name="textHeight"
+              activeControl={activeControl}
+              toggleControl={toggleControl}
+              title="Override text platform height"
+              disabled={loading}
+              icon={<TextHeightIcon />}
+            >
+              <div className="text-height-control-container">
+                <label className="text-height-label">Text Platform Height</label>
+                                 <div className="text-height-preset-buttons">
+                   <button 
+                     className={`text-height-preset-button ${isTextHeightPresetActive(undefined)}`}
+                     onClick={() => handleTextHeightPreset(undefined)}
+                     disabled={loading}
+                     title="Auto (default)"
+                   >
+                     Auto
+                   </button>
+                   <button 
+                     className={`text-height-preset-button ${isTextHeightPresetActive(5)}`}
+                     onClick={() => handleTextHeightPreset(5)}
+                     disabled={loading}
+                     title="Low (5mm)"
+                   >
+                     Low
+                   </button>
+                   <button 
+                     className={`text-height-preset-button ${isTextHeightPresetActive(10)}`}
+                     onClick={() => handleTextHeightPreset(10)}
+                     disabled={loading}
+                     title="Medium (10mm)"
+                   >
+                     Medium
+                   </button>
+                   <button 
+                     className={`text-height-preset-button ${isTextHeightPresetActive(20)}`}
+                     onClick={() => handleTextHeightPreset(20)}
+                     disabled={loading}
+                     title="High (20mm)"
+                   >
+                     High
+                   </button>
+                 </div>
+                <div className="text-height-slider-wrapper">
+                  <span className="text-height-range-label">Fine adjustment:</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    step="1"
+                    value={textPlatformHeightOverride || 0}
+                    onChange={handleTextHeightChange}
+                    onMouseUp={handleTextHeightEnd}
+                    onTouchEnd={handleTextHeightEnd}
+                    className="text-height-slider"
+                    aria-label="Adjust text platform height"
+                    disabled={loading}
+                  />
+                  <span className="text-height-value">
+                     {textPlatformHeightOverride === undefined ? 'Auto' : `${textPlatformHeightOverride}mm`}
+                   </span>
+                </div>
+                <div className="text-height-description">
+                  {textPlatformHeightOverride === undefined 
+                    ? 'Automatic height based on terrain' 
+                    : `Custom height: ${textPlatformHeightOverride}mm`
+                  }
+                </div>
+                <button 
+                  className="reset-text-height-button" 
+                  onClick={resetTextHeight} 
+                  disabled={loading || !textPlatformHeightOverride}
+                  title="Reset text platform height"
+                >
+                  Reset
+                </button>
+              </div>
+            </ToolbarControl>
+            <span className="tooltip">Override text platform height</span>
+          </div>
+        )}
       </div>
     </>
   );

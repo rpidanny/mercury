@@ -16,7 +16,8 @@ vi.mock('./context/AppContext', () => {
         paddingFactor: 4.0,
         embossText: '',
         rotationAngle: 0,
-        lowPolyMode: false
+        lowPolyMode: false,
+        textPlatformHeightOverride: undefined
       },
       file: null,
       resources: { font: null, terrainData: null }
@@ -176,7 +177,8 @@ describe('App', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -205,7 +207,8 @@ describe('App', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { font: null, terrainData: createMockTerrainData() }
@@ -236,7 +239,8 @@ describe('App', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { font: null, terrainData: null }

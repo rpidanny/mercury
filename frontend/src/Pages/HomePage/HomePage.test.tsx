@@ -31,7 +31,8 @@ describe('HomePage', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -71,7 +72,8 @@ describe('HomePage', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -119,7 +121,8 @@ describe('HomePage', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { font: null, terrainData: null }
@@ -152,7 +155,8 @@ describe('HomePage', () => {
           paddingFactor: 4.0,
           embossText: '',
           rotationAngle: 0,
-          lowPolyMode: false
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
         },
         file: null,
         resources: { font: null, terrainData: null }

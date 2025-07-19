@@ -14,6 +14,7 @@ type AppState = {
     embossText: string;
     rotationAngle: number;
     lowPolyMode: boolean;
+    textPlatformHeightOverride?: number;
   };
   ui: {
     status: string;
