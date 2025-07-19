@@ -275,19 +275,89 @@ body.model-mode #scene-container canvas {
   }
 }
 
-.slider-container {
+.rotation-control-container {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+}
+
+.rotation-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.rotation-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.rotation-preset-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 2px solid transparent;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  min-height: 36px;
+}
+
+.rotation-preset-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rotation-preset-button.active {
+  background-color: white;
+  border-color: #3b82f6;
+  color: #2563eb;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.rotation-preset-button:disabled:not(.active) {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rotation-preset-button:active:not(:disabled) {
+  transform: translateY(0);
+  background-color: rgba(255, 255, 255, 1);
+}
+
+.rotation-slider-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.rotation-range-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+  display: block;
 }
 
 .rotation-slider {
   -webkit-appearance: none;
-  width: 150px;
+  width: 100%;
   height: 4px;
   border-radius: 2px;
   background: #d1d5db;
   outline: none;
+  margin: 0.5rem 0;
 }
 
 .rotation-slider::-webkit-slider-thumb {
@@ -330,9 +400,21 @@ body.model-mode #scene-container canvas {
 .rotation-value {
   font-size: 0.875rem;
   color: #374151;
-  min-width: 36px;
-  text-align: right;
-  font-weight: 500;
+  font-weight: 600;
+  text-align: center;
+}
+
+.rotation-description {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Shape selector styles */
@@ -396,8 +478,8 @@ body.model-mode #scene-container canvas {
     padding: 0.75rem;
   }
 
-  .rotation-slider {
-    width: 120px;
+  .rotation-control-container {
+    width: 240px;
   }
 
   .shape-button {
