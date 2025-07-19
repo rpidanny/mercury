@@ -5,7 +5,7 @@ import Renderer from '../lib/Renderer';
 import ModelBuilder from '../lib/ModelBuilder';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
-import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const useModelBuilder = () => {
   const { state, setLoading } = useAppContext();
@@ -103,104 +103,130 @@ export const useModelBuilder = () => {
     setLoading(true, 'Updating model...');
   }, [setLoading]);
 
-  // Merge all separate meshes into a single BufferGeometry for proper 3D printing
+  // Create a properly manifold mesh for 3D printing by rebuilding geometry connections
   const createSingleMeshForExport = useCallback((group: Object3D): BufferGeometry => {
-    const geometries: BufferGeometry[] = [];
+    const allVertices: number[] = [];
+    const allIndices: number[] = [];
+    let vertexOffset = 0;
     
-    // Traverse the group and collect all geometries
+    // Step 1: Collect and prepare all geometries with consistent orientation
+    const processedGeometries: { positions: Float32Array; isBackSide: boolean }[] = [];
+    
     group.traverse((child) => {
       if (child instanceof Mesh && child.geometry) {
         const geometry = child.geometry.clone();
         
-        // Apply the mesh's world matrix to get correct positioning
+        // Apply world matrix transformations
         const worldMatrix = new Matrix4();
         child.updateWorldMatrix(true, false);
         worldMatrix.copy(child.matrixWorld);
         geometry.applyMatrix4(worldMatrix);
         
-        // Convert indexed geometry to non-indexed to ensure compatibility
-        let cleanGeometry: BufferGeometry;
+        // Convert to non-indexed geometry
+        const nonIndexedGeo = geometry.index ? geometry.toNonIndexed() : geometry;
         
-        if (geometry.index) {
-          cleanGeometry = geometry.toNonIndexed();
-        } else {
-          cleanGeometry = geometry;
-        }
-        
-        // Handle face orientation for manifold mesh
-        // Check if this mesh uses BackSide material (terrain, base, wall)
+        // Check material orientation
         const material = (child as Mesh).material as THREE.MeshStandardMaterial;
-        const needsFlip = material && material.side === THREE.BackSide;
+        const isBackSide = material && material.side === THREE.BackSide;
         
-        // Create export geometry with consistent face orientation
-        const exportGeometry = new THREE.BufferGeometry();
-        
-        if (cleanGeometry.attributes.position) {
-          const positionAttr = cleanGeometry.attributes.position.clone();
-          
-          // Flip faces for BackSide materials to ensure consistent outward normals
-          if (needsFlip) {
-            const positions = positionAttr.array as Float32Array;
-            const newPositions = new Float32Array(positions.length);
-            
-            // Reverse triangle winding order to flip faces
-            for (let i = 0; i < positions.length; i += 9) {
-              // Original triangle: v0, v1, v2
-              // Flipped triangle: v0, v2, v1
-              
-              // v0 (unchanged)
-              newPositions[i] = positions[i];
-              newPositions[i + 1] = positions[i + 1];
-              newPositions[i + 2] = positions[i + 2];
-              
-              // v2 (was v1)
-              newPositions[i + 3] = positions[i + 6];
-              newPositions[i + 4] = positions[i + 7];
-              newPositions[i + 5] = positions[i + 8];
-              
-              // v1 (was v2)
-              newPositions[i + 6] = positions[i + 3];
-              newPositions[i + 7] = positions[i + 4];
-              newPositions[i + 8] = positions[i + 5];
-            }
-            
-            exportGeometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
-          } else {
-            exportGeometry.setAttribute('position', positionAttr);
-          }
-        } else {
-          console.warn('Geometry without position attribute found, skipping');
-          return;
-        }
-        
-        // Validate the geometry has valid triangles
-        const positionCount = exportGeometry.attributes.position.count;
-        if (positionCount >= 3 && positionCount % 3 === 0) {
-          geometries.push(exportGeometry);
-        } else {
-          console.warn(`Invalid geometry with ${positionCount} vertices, skipping`);
+        if (nonIndexedGeo.attributes.position) {
+          processedGeometries.push({
+            positions: nonIndexedGeo.attributes.position.array as Float32Array,
+            isBackSide
+          });
         }
       }
     });
     
-    if (geometries.length === 0) {
+    // Step 2: Process each geometry with consistent face orientation
+    for (const { positions, isBackSide } of processedGeometries) {
+      const numVertices = positions.length / 3;
+      
+      // Add vertices with consistent winding
+      for (let i = 0; i < positions.length; i += 9) {
+        if (isBackSide) {
+          // Flip triangle winding for BackSide materials: v0, v2, v1
+          // v0
+          allVertices.push(positions[i], positions[i + 1], positions[i + 2]);
+          // v2 (was v1)
+          allVertices.push(positions[i + 6], positions[i + 7], positions[i + 8]);
+          // v1 (was v2)  
+          allVertices.push(positions[i + 3], positions[i + 4], positions[i + 5]);
+        } else {
+          // Keep original winding for FrontSide materials: v0, v1, v2
+          allVertices.push(
+            positions[i], positions[i + 1], positions[i + 2],     // v0
+            positions[i + 3], positions[i + 4], positions[i + 5], // v1
+            positions[i + 6], positions[i + 7], positions[i + 8]  // v2
+          );
+        }
+      }
+      
+      // Add indices for this geometry
+      for (let i = 0; i < numVertices; i++) {
+        allIndices.push(vertexOffset + i);
+      }
+      
+      vertexOffset += numVertices;
+    }
+    
+    if (allVertices.length === 0) {
       throw new Error('No valid geometries found to export');
     }
     
-    // Merge all geometries with consistent face orientations
-    const mergedGeometry = mergeGeometries(geometries, false);
+    // Step 3: Create final geometry with merged vertices to eliminate duplicates
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(allVertices, 3));
+    geometry.setIndex(allIndices);
     
-    if (!mergedGeometry) {
-      throw new Error('Failed to merge geometries');
-    }
+    // Step 4: Merge duplicate vertices to create manifold edges
+    const mergedGeometry = mergeVertices(geometry, 0.0001); // Small tolerance for floating point precision
     
-    // Ensure consistent winding and compute normals for manifold mesh
+    // Step 5: Final validation and normal computation
     mergedGeometry.computeVertexNormals();
     
-    // Additional manifold validation - remove duplicate vertices that can cause non-manifold edges
-    const cleanedGeometry = mergeVertices(mergedGeometry);
+    // Step 6: Additional manifold validation - ensure no degenerate triangles
+    const finalPositions = mergedGeometry.attributes.position.array as Float32Array;
+    const finalIndices = mergedGeometry.index?.array;
     
-    return cleanedGeometry;
+    if (!finalIndices) {
+      throw new Error('Failed to create indexed geometry');
+    }
+    
+    // Remove degenerate triangles (triangles with zero area)
+    const validIndices: number[] = [];
+    const EPSILON = 1e-10;
+    
+    for (let i = 0; i < finalIndices.length; i += 3) {
+      const i1 = finalIndices[i] * 3;
+      const i2 = finalIndices[i + 1] * 3;
+      const i3 = finalIndices[i + 2] * 3;
+      
+      // Get triangle vertices
+      const v1 = new THREE.Vector3(finalPositions[i1], finalPositions[i1 + 1], finalPositions[i1 + 2]);
+      const v2 = new THREE.Vector3(finalPositions[i2], finalPositions[i2 + 1], finalPositions[i2 + 2]);
+      const v3 = new THREE.Vector3(finalPositions[i3], finalPositions[i3 + 1], finalPositions[i3 + 2]);
+      
+      // Calculate triangle area using cross product
+      const edge1 = v2.clone().sub(v1);
+      const edge2 = v3.clone().sub(v1);
+      const cross = edge1.clone().cross(edge2);
+      const area = cross.length() * 0.5;
+      
+      // Only include triangles with sufficient area
+      if (area > EPSILON) {
+        validIndices.push(finalIndices[i], finalIndices[i + 1], finalIndices[i + 2]);
+      }
+    }
+    
+    // Create final clean geometry
+    const cleanGeometry = new THREE.BufferGeometry();
+    cleanGeometry.setAttribute('position', mergedGeometry.attributes.position);
+    cleanGeometry.setIndex(validIndices);
+    cleanGeometry.computeVertexNormals();
+    
+    console.log(`Export: Created manifold mesh with ${validIndices.length / 3} triangles`);
+    return cleanGeometry;
   }, []);
 
   // Handle download functionality with proper mesh merging for 3D printing
