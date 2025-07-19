@@ -359,4 +359,234 @@ describe('PreviewPage', () => {
     const textHeightToolbarBtn = screen.queryByTitle('Override text platform height');
     expect(textHeightToolbarBtn).not.toBeInTheDocument();
   });
+
+  it('handles rotation angle change via slider', () => {
+    const updateModelConfig = vi.fn();
+    const updateModel = vi.fn();
+    
+    // Override the context with mocked functions
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon' as ShapeType, 
+          widthMM: 100, 
+          altMult: 1,
+          modelResolution: 500,
+          paddingFactor: 4.0,
+          embossText: '',
+          rotationAngle: 0,
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig,
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
+    });
+    
+    // Override model builder hook
+    vi.spyOn(ModelBuilderHook, 'useModelBuilder').mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel,
+      downloadModel: vi.fn()
+    });
+
+    render(<PreviewPage />);
+
+    // Open the rotation control panel
+    const rotationToolbarBtn = screen.getByTitle('Rotate your model');
+    fireEvent.click(rotationToolbarBtn);
+
+    // Find the rotation slider
+    const rotationSlider = screen.getByRole('slider', { name: 'Fine adjust rotation angle' });
+    
+    // Test changing rotation angle
+    fireEvent.change(rotationSlider, { target: { value: '45' } });
+    expect(updateModelConfig).toHaveBeenCalledWith({ rotationAngle: 45 });
+    
+    // Simulate end of sliding to trigger update
+    fireEvent.mouseUp(rotationSlider);
+    expect(updateModel).toHaveBeenCalled();
+  });
+
+  it('displays geometric rotation preset buttons', () => {
+    const updateModelConfig = vi.fn();
+    const updateModel = vi.fn();
+    
+    // Override model builder hook
+    vi.spyOn(ModelBuilderHook, 'useModelBuilder').mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel,
+      downloadModel: vi.fn()
+    });
+    
+    // Override the context
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon' as ShapeType, 
+          widthMM: 100, 
+          altMult: 1,
+          modelResolution: 500,
+          paddingFactor: 4.0,
+          embossText: '',
+          rotationAngle: 0,
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig,
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
+    });
+
+    render(<PreviewPage />);
+
+    // Open the rotation control panel
+    const rotationToolbarBtn = screen.getByTitle('Rotate your model');
+    fireEvent.click(rotationToolbarBtn);
+
+    // Check for all geometric preset buttons
+    expect(screen.getByTitle('Original orientation (0°)')).toBeInTheDocument();
+    expect(screen.getByTitle('30° - Half hexagon side')).toBeInTheDocument();
+    expect(screen.getByTitle('45° - Square/rectangle diagonal')).toBeInTheDocument();
+    expect(screen.getByTitle('60° - Hexagon side alignment')).toBeInTheDocument();
+    expect(screen.getByTitle('90° - Quarter turn')).toBeInTheDocument();
+    expect(screen.getByTitle('120° - Hexagon vertex alignment')).toBeInTheDocument();
+  });
+
+  it('handles rotation preset button clicks', () => {
+    const updateModelConfig = vi.fn();
+    const updateModel = vi.fn();
+    
+    // Override model builder hook
+    vi.spyOn(ModelBuilderHook, 'useModelBuilder').mockReturnValue({
+      localMesh: new Object3D(),
+      updateModel,
+      downloadModel: vi.fn()
+    });
+    
+    // Override the context
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon' as ShapeType, 
+          widthMM: 100, 
+          altMult: 1,
+          modelResolution: 500,
+          paddingFactor: 4.0,
+          embossText: '',
+          rotationAngle: 0,
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig,
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
+    });
+
+    render(<PreviewPage />);
+
+    // Open the rotation control panel
+    const rotationToolbarBtn = screen.getByTitle('Rotate your model');
+    fireEvent.click(rotationToolbarBtn);
+
+    // Test clicking the 60° hexagon preset
+    const hexagonPresetBtn = screen.getByTitle('60° - Hexagon side alignment');
+    fireEvent.click(hexagonPresetBtn);
+    
+    expect(updateModelConfig).toHaveBeenCalledWith({ rotationAngle: 60 });
+    expect(updateModel).toHaveBeenCalled();
+
+    // Clear previous calls
+    updateModelConfig.mockClear();
+    updateModel.mockClear();
+
+    // Test clicking the 45° square preset
+    const squarePresetBtn = screen.getByTitle('45° - Square/rectangle diagonal');
+    fireEvent.click(squarePresetBtn);
+    
+    expect(updateModelConfig).toHaveBeenCalledWith({ rotationAngle: 45 });
+    expect(updateModel).toHaveBeenCalled();
+  });
+
+  it('shows active state for current rotation angle preset', () => {
+    // Override the context with a specific rotation angle
+    vi.spyOn(AppContext, 'useAppContext').mockReturnValue({
+      state: {
+        ui: { loading: false, status: '' },
+        modelConfig: { 
+          shape: 'hexagon' as ShapeType, 
+          widthMM: 100, 
+          altMult: 1,
+          modelResolution: 500,
+          paddingFactor: 4.0,
+          embossText: '',
+          rotationAngle: 60, // Set to 60 degrees
+          lowPolyMode: false,
+          textPlatformHeightOverride: undefined
+        },
+        file: null,
+        resources: { 
+          font: null, 
+          terrainData: createMockTerrainData()
+        }
+      },
+      dispatch: vi.fn(),
+      updateModelConfig: vi.fn(),
+      setLoading: vi.fn(),
+      resetTerrain: vi.fn(),
+      setLowPolyMode: vi.fn()
+    });
+
+    render(<PreviewPage />);
+
+    // Open the rotation control panel
+    const rotationToolbarBtn = screen.getByTitle('Rotate your model');
+    fireEvent.click(rotationToolbarBtn);
+
+    // The 60° button should have the active class
+    const hexagonPresetBtn = screen.getByTitle('60° - Hexagon side alignment');
+    expect(hexagonPresetBtn).toHaveClass('active');
+    
+    // Other buttons should not be active
+    const originalBtn = screen.getByTitle('Original orientation (0°)');
+    expect(originalBtn).not.toHaveClass('active');
+  });
+
+  it('displays rotation description text', () => {
+    render(<PreviewPage />);
+
+    // Open the rotation control panel
+    const rotationToolbarBtn = screen.getByTitle('Rotate your model');
+    fireEvent.click(rotationToolbarBtn);
+
+    // Check for the geometric description text
+    expect(screen.getByText('Choose angles optimized for hexagons and rectangles, or fine-tune below.')).toBeInTheDocument();
+  });
 }); 
