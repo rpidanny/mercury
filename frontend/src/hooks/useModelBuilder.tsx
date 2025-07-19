@@ -5,7 +5,7 @@ import Renderer from '../lib/Renderer';
 import ModelBuilder from '../lib/ModelBuilder';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const useModelBuilder = () => {
   const { state, setLoading } = useAppContext();
@@ -118,39 +118,89 @@ export const useModelBuilder = () => {
         worldMatrix.copy(child.matrixWorld);
         geometry.applyMatrix4(worldMatrix);
         
-        // Remove UV coordinates and other non-essential attributes to ensure compatibility
-        // STL export only needs position data
-        const cleanGeometry = new THREE.BufferGeometry();
+        // Convert indexed geometry to non-indexed to ensure compatibility
+        let cleanGeometry: BufferGeometry;
         
-        // Copy only position attribute (required for STL)
-        if (geometry.attributes.position) {
-          cleanGeometry.setAttribute('position', geometry.attributes.position);
-        }
-        
-        // Copy index if it exists
         if (geometry.index) {
-          cleanGeometry.setIndex(geometry.index);
+          cleanGeometry = geometry.toNonIndexed();
+        } else {
+          cleanGeometry = geometry;
         }
         
-        geometries.push(cleanGeometry);
+        // Handle face orientation for manifold mesh
+        // Check if this mesh uses BackSide material (terrain, base, wall)
+        const material = (child as Mesh).material as THREE.MeshStandardMaterial;
+        const needsFlip = material && material.side === THREE.BackSide;
+        
+        // Create export geometry with consistent face orientation
+        const exportGeometry = new THREE.BufferGeometry();
+        
+        if (cleanGeometry.attributes.position) {
+          const positionAttr = cleanGeometry.attributes.position.clone();
+          
+          // Flip faces for BackSide materials to ensure consistent outward normals
+          if (needsFlip) {
+            const positions = positionAttr.array as Float32Array;
+            const newPositions = new Float32Array(positions.length);
+            
+            // Reverse triangle winding order to flip faces
+            for (let i = 0; i < positions.length; i += 9) {
+              // Original triangle: v0, v1, v2
+              // Flipped triangle: v0, v2, v1
+              
+              // v0 (unchanged)
+              newPositions[i] = positions[i];
+              newPositions[i + 1] = positions[i + 1];
+              newPositions[i + 2] = positions[i + 2];
+              
+              // v2 (was v1)
+              newPositions[i + 3] = positions[i + 6];
+              newPositions[i + 4] = positions[i + 7];
+              newPositions[i + 5] = positions[i + 8];
+              
+              // v1 (was v2)
+              newPositions[i + 6] = positions[i + 3];
+              newPositions[i + 7] = positions[i + 4];
+              newPositions[i + 8] = positions[i + 5];
+            }
+            
+            exportGeometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
+          } else {
+            exportGeometry.setAttribute('position', positionAttr);
+          }
+        } else {
+          console.warn('Geometry without position attribute found, skipping');
+          return;
+        }
+        
+        // Validate the geometry has valid triangles
+        const positionCount = exportGeometry.attributes.position.count;
+        if (positionCount >= 3 && positionCount % 3 === 0) {
+          geometries.push(exportGeometry);
+        } else {
+          console.warn(`Invalid geometry with ${positionCount} vertices, skipping`);
+        }
       }
     });
     
     if (geometries.length === 0) {
-      throw new Error('No geometries found to export');
+      throw new Error('No valid geometries found to export');
     }
     
-    // Merge all geometries into a single BufferGeometry
+    // Merge all geometries with consistent face orientations
     const mergedGeometry = mergeGeometries(geometries, false);
     
     if (!mergedGeometry) {
       throw new Error('Failed to merge geometries');
     }
     
-    // Ensure consistent winding and compute normals for proper 3D printing
+    // Ensure consistent winding and compute normals for manifold mesh
     mergedGeometry.computeVertexNormals();
     
-    return mergedGeometry;
+    // Additional manifold validation - remove duplicate vertices that can cause non-manifold edges
+    const cleanedGeometry = mergeVertices(mergedGeometry);
+    
+    return cleanedGeometry;
   }, []);
 
   // Handle download functionality with proper mesh merging for 3D printing
