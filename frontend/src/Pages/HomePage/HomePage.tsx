@@ -138,7 +138,7 @@ export default function HomePage() {
                     {[
                       { value: 100, label: 'Low' },
                       { value: 1000, label: 'Medium' },
-                      { value: 2500, label: 'High' }
+                      { value: 2000, label: 'High' }
                     ].map(({ value, label }) => (
                       <button
                         key={value}
