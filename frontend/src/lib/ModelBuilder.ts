@@ -477,36 +477,32 @@ export default class ModelBuilder {
   }
 
   private buildBaseGeometry(): THREE.BufferGeometry {
-    if (!this.shape || !this.delaunay) {
-      throw new Error(
-        "Shape and delaunay must be created before building base geometry"
-      );
+    if (!this.shape) {
+      throw new Error("Shape must be created before building base geometry");
     }
 
-    // Create base geometry that matches the terrain boundary exactly
-    // This eliminates gaps between walls and base
-    const hull: number[] = Array.from(this.delaunay.hull);
+    const bbox2d = this.shape.getBoundingBox();
+    const geoW = bbox2d.maxX - bbox2d.minX;
+    let geo: THREE.BufferGeometry;
 
-    if (hull.length < 3) {
-      return new THREE.BufferGeometry();
+    // Handle circle shape differently
+    if (this.shape.getType() === "circle") {
+      const radiusMM = (geoW * this.scale * Config.BASE_OVERLAP_FACTOR) / 2;
+      const circle = new THREE.Shape();
+      circle.absarc(0, 0, radiusMM, 0, Math.PI * 2, false);
+      geo = new THREE.ShapeGeometry(circle);
+    } else {
+      // For other shapes, use their vertices
+      const verts2D = this.shape.getVertices().map((v) => {
+        // Scale the vertices
+        const scaled = new THREE.Vector2(
+          v.x * this.scale * Config.BASE_OVERLAP_FACTOR,
+          v.y * this.scale * Config.BASE_OVERLAP_FACTOR
+        );
+        return scaled;
+      });
+      geo = new THREE.ShapeGeometry(new THREE.Shape(verts2D));
     }
-
-    // Get hull vertices in order
-    const hullVertices: THREE.Vector2[] = hull.map(
-      (i) => new THREE.Vector2(this.scaledPoints[i].x, this.scaledPoints[i].y)
-    );
-
-    // Create base shape from terrain hull boundary
-    const baseShape = new THREE.Shape();
-    if (hullVertices.length > 0) {
-      baseShape.moveTo(hullVertices[0].x, hullVertices[0].y);
-      for (let i = 1; i < hullVertices.length; i++) {
-        baseShape.lineTo(hullVertices[i].x, hullVertices[i].y);
-      }
-      baseShape.closePath();
-    }
-
-    const geo = new THREE.ShapeGeometry(baseShape);
 
     // Move base to correct z position
     geo.translate(0, 0, this.baseZ);
@@ -606,18 +602,9 @@ export default class ModelBuilder {
     let textOverlapWarning = false;
 
     // Only process text if both text and font are provided
-    if (embossText && font && this.shape && this.delaunay) {
-      // Use actual terrain boundary instead of shape with overlap factor
-      const hull: number[] = Array.from(this.delaunay.hull);
-      const hullVertices = hull.map((i) => this.scaledPoints[i]);
-
-      // Find the maximum distance from center to any hull vertex
-      let maxRadius = 0;
-      for (const vertex of hullVertices) {
-        const distance = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y);
-        maxRadius = Math.max(maxRadius, distance);
-      }
-      const hexRadius = maxRadius;
+    if (embossText && font && this.shape) {
+      const bbox2d = this.shape.getBoundingBox();
+      const hexRadius = bbox2d.maxX * this.scale * Config.BASE_OVERLAP_FACTOR;
 
       // Calculate platform dimensions
       const margin = hexRadius * Config.TEXT_PLATFORM_MARGIN_FACTOR;
