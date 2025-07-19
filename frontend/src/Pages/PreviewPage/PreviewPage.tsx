@@ -84,6 +84,16 @@ export default function PreviewPage() {
     updateModel();
   }, [updateModel]);
 
+  // Handle rotation preset changes
+  const handleRotationPreset = useCallback((angle: number) => {
+    updateModelConfig({ rotationAngle: angle });
+    updateModel();
+  }, [updateModelConfig, updateModel]);
+
+  const isRotationPresetActive = useCallback((angle: number) => {
+    return rotationAngle === angle ? 'active' : '';
+  }, [rotationAngle]);
+
   // Handle altitude multiplier changes
   const handleAltitudeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     updateModelConfig({ altMult: parseFloat(e.target.value) });
@@ -350,22 +360,94 @@ export default function PreviewPage() {
             disabled={loading}
             icon={<RotationIcon />}
           >
-            <div className="slider-container">
-              <input
-                type="range"
-                min="-180"
-                max="180"
-                value={rotationAngle}
-                onChange={handleRotationChange}
-                onMouseDown={handleRotationStart}
-                onMouseUp={handleRotationEnd}
-                onTouchStart={handleRotationStart}
-                onTouchEnd={handleRotationEnd}
-                className="rotation-slider"
-                aria-label="Rotate terrain"
-                disabled={loading}
-              />
-              <span className="rotation-value">{rotationAngle}°</span>
+            <div className="rotation-control-container">
+              <label className="rotation-label">Rotation Angle</label>
+              
+              <div className="rotation-presets">
+                <button 
+                  className={`rotation-preset-button ${isRotationPresetActive(0)}`}
+                  onClick={() => handleRotationPreset(0)}
+                  disabled={loading}
+                  title="Original orientation (0°)"
+                  type="button"
+                >
+                  0°
+                </button>
+                
+                <button 
+                  className={`rotation-preset-button ${isRotationPresetActive(30)}`}
+                  onClick={() => handleRotationPreset(30)}
+                  disabled={loading}
+                  title="30° - Half hexagon side"
+                  type="button"
+                >
+                  30°
+                </button>
+                
+                <button 
+                  className={`rotation-preset-button ${isRotationPresetActive(45)}`}
+                  onClick={() => handleRotationPreset(45)}
+                  disabled={loading}
+                  title="45° - Square/rectangle diagonal"
+                  type="button"
+                >
+                  45°
+                </button>
+                
+                <button 
+                  className={`rotation-preset-button ${isRotationPresetActive(60)}`}
+                  onClick={() => handleRotationPreset(60)}
+                  disabled={loading}
+                  title="60° - Hexagon side alignment"
+                  type="button"
+                >
+                  60°
+                </button>
+                
+                <button 
+                  className={`rotation-preset-button ${isRotationPresetActive(90)}`}
+                  onClick={() => handleRotationPreset(90)}
+                  disabled={loading}
+                  title="90° - Quarter turn"
+                  type="button"
+                >
+                  90°
+                </button>
+                
+                <button 
+                  className={`rotation-preset-button ${isRotationPresetActive(120)}`}
+                  onClick={() => handleRotationPreset(120)}
+                  disabled={loading}
+                  title="120° - Hexagon vertex alignment"
+                  type="button"
+                >
+                  120°
+                </button>
+              </div>
+              
+              <div className="rotation-slider-wrapper">
+                <span className="rotation-range-label">Fine adjustment:</span>
+                <input
+                  type="range"
+                  min="-180"
+                  max="180"
+                  step="5"
+                  value={rotationAngle}
+                  onChange={handleRotationChange}
+                  onMouseDown={handleRotationStart}
+                  onMouseUp={handleRotationEnd}
+                  onTouchStart={handleRotationStart}
+                  onTouchEnd={handleRotationEnd}
+                  className="rotation-slider"
+                  aria-label="Fine adjust rotation angle"
+                  disabled={loading}
+                />
+                <span className="rotation-value">{rotationAngle}°</span>
+              </div>
+              
+              <div className="rotation-description">
+                Choose angles optimized for hexagons and rectangles, or fine-tune below.
+              </div>
             </div>
           </ToolbarControl>
           <span className="tooltip">Rotate your model</span>
