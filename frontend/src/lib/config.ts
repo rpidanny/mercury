@@ -20,8 +20,6 @@ const Config = {
   TEXT_PLATFORM_DEPTH_FACTOR: 0.165, // Increased by 10% from 0.15 for better text fitting
   TEXT_EMBOSS_DEPTH: 1.0,
   TEXT_SIZE_FACTOR: 0.15, // Increased from 0.08 to 0.15 for better 3D printability
-  TEXT_MIN_SIZE_MM: 3.0, // Minimum text size in mm for 3D printing reliability
-  TEXT_MAX_SIZE_MM: 25.0, // Maximum text size to prevent overly large text
   TEXT_PADDING_FACTOR: 0.9,
   TEXT_PATH_BUFFER: 5.0,
   WORLD_Z_UP: new THREE.Vector3(0, 0, 1),

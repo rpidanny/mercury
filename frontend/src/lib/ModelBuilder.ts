@@ -622,9 +622,17 @@ export default class ModelBuilder {
       const minY = yCenter - pDepth / 2 - Config.TEXT_PATH_BUFFER;
       const maxY = yCenter + pDepth / 2 + Config.TEXT_PATH_BUFFER;
 
-      textOverlapWarning = this.trackPoints3D.some(
+      // Check for overlap with path
+      const hasPathOverlap = this.trackPoints3D.some(
         (pt) => pt.x >= minX && pt.x <= maxX && pt.y >= minY && pt.y <= maxY
       );
+
+      if (hasPathOverlap) {
+        textOverlapWarning = true;
+        console.warn(
+          `WARNING: Text "${embossText}" overlaps with path. Consider different text placement.`
+        );
+      }
 
       // Create platform geometry
       const ps = new THREE.Shape();
@@ -647,12 +655,8 @@ export default class ModelBuilder {
         ? Config.LOW_DETAIL_CURVE_SEGMENTS
         : Config.HIGH_DETAIL_CURVE_SEGMENTS;
 
-      // Calculate initial text size and create geometry to measure actual dimensions
-      const proportionalSize = pWidth * Config.TEXT_SIZE_FACTOR;
-      let textSize = Math.max(
-        Config.TEXT_MIN_SIZE_MM,
-        Math.min(Config.TEXT_MAX_SIZE_MM, proportionalSize)
-      );
+      // Start with proportional text size
+      let textSize = pWidth * Config.TEXT_SIZE_FACTOR;
 
       // Create initial text geometry to measure dimensions
       textGeo = new TextGeometry(embossText, {
@@ -686,25 +690,18 @@ export default class ModelBuilder {
           const originalSize = textSize;
           textSize = textSize * scale;
 
-          // Ensure we don't go below minimum printable size
-          if (textSize < Config.TEXT_MIN_SIZE_MM) {
-            textSize = Config.TEXT_MIN_SIZE_MM;
-            console.log(
-              `Warning: Text "${embossText}" scaled to minimum size ${textSize.toFixed(
-                1
-              )}mm but may overflow platform`
-            );
-          } else {
-            console.log(
-              `Text size scaled from ${originalSize.toFixed(
-                1
-              )}mm to ${textSize.toFixed(
-                1
-              )}mm to fit platform (${pWidth.toFixed(1)}mm × ${pDepth.toFixed(
-                1
-              )}mm)`
-            );
-          }
+          // Set warning flag when text needs to be scaled down
+          textOverlapWarning = true;
+
+          console.warn(
+            `WARNING: Text "${embossText}" scaled from ${originalSize.toFixed(
+              1
+            )}mm to ${textSize.toFixed(1)}mm to fit platform (${pWidth.toFixed(
+              1
+            )}mm × ${pDepth.toFixed(
+              1
+            )}mm). Consider shorter text or larger model.`
+          );
 
           // Recreate geometry with fitted size
           textGeo = new TextGeometry(embossText, {
@@ -714,15 +711,6 @@ export default class ModelBuilder {
             curveSegments: curveSegments,
           });
           textGeo.computeBoundingBox();
-        } else if (
-          textSize === Config.TEXT_MIN_SIZE_MM &&
-          proportionalSize < Config.TEXT_MIN_SIZE_MM
-        ) {
-          console.log(
-            `Text size increased from ${proportionalSize.toFixed(
-              1
-            )}mm to ${textSize.toFixed(1)}mm for 3D printing reliability`
-          );
         }
       }
 
