@@ -647,13 +647,84 @@ export default class ModelBuilder {
         ? Config.LOW_DETAIL_CURVE_SEGMENTS
         : Config.HIGH_DETAIL_CURVE_SEGMENTS;
 
+      // Calculate initial text size and create geometry to measure actual dimensions
+      const proportionalSize = pWidth * Config.TEXT_SIZE_FACTOR;
+      let textSize = Math.max(
+        Config.TEXT_MIN_SIZE_MM,
+        Math.min(Config.TEXT_MAX_SIZE_MM, proportionalSize)
+      );
+
+      // Create initial text geometry to measure dimensions
       textGeo = new TextGeometry(embossText, {
         font,
-        size: pWidth * Config.TEXT_SIZE_FACTOR,
+        size: textSize,
         depth: Config.TEXT_EMBOSS_DEPTH,
         curveSegments: curveSegments,
       });
       textGeo.computeBoundingBox();
+
+      // Define platform constraints with margins
+      const platformMarginX = 0.05; // 5% margin on each side
+      const platformMarginY = 0.1; // 10% margin top/bottom
+      const maxTextWidth = pWidth * (1 - 2 * platformMarginX);
+      const maxTextHeight = pDepth * (1 - 2 * platformMarginY);
+
+      if (textGeo.boundingBox) {
+        const textWidth = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
+        const textHeight =
+          textGeo.boundingBox.max.y - textGeo.boundingBox.min.y;
+
+        // Calculate scale factors needed to fit within platform
+        const widthScale =
+          textWidth > maxTextWidth ? maxTextWidth / textWidth : 1;
+        const heightScale =
+          textHeight > maxTextHeight ? maxTextHeight / textHeight : 1;
+        const scale = Math.min(widthScale, heightScale);
+
+        // Apply scaling if needed
+        if (scale < 1) {
+          const originalSize = textSize;
+          textSize = textSize * scale;
+
+          // Ensure we don't go below minimum printable size
+          if (textSize < Config.TEXT_MIN_SIZE_MM) {
+            textSize = Config.TEXT_MIN_SIZE_MM;
+            console.log(
+              `Warning: Text "${embossText}" scaled to minimum size ${textSize.toFixed(
+                1
+              )}mm but may overflow platform`
+            );
+          } else {
+            console.log(
+              `Text size scaled from ${originalSize.toFixed(
+                1
+              )}mm to ${textSize.toFixed(
+                1
+              )}mm to fit platform (${pWidth.toFixed(1)}mm × ${pDepth.toFixed(
+                1
+              )}mm)`
+            );
+          }
+
+          // Recreate geometry with fitted size
+          textGeo = new TextGeometry(embossText, {
+            font,
+            size: textSize,
+            depth: Config.TEXT_EMBOSS_DEPTH,
+            curveSegments: curveSegments,
+          });
+          textGeo.computeBoundingBox();
+        } else if (
+          textSize === Config.TEXT_MIN_SIZE_MM &&
+          proportionalSize < Config.TEXT_MIN_SIZE_MM
+        ) {
+          console.log(
+            `Text size increased from ${proportionalSize.toFixed(
+              1
+            )}mm to ${textSize.toFixed(1)}mm for 3D printing reliability`
+          );
+        }
+      }
 
       // Center and position the text on top of the platform
       if (textGeo.boundingBox) {
