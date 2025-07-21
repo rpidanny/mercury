@@ -15,7 +15,7 @@ const Config = {
   BASE_OVERLAP_FACTOR: 1.005,
   BOUNDARY_THRESHOLD_MM: 1.0,
   TEXT_PLATFORM_HEIGHT_OFFSET: 1.0,
-  TEXT_PLATFORM_MARGIN_FACTOR: 0.2,
+  TEXT_PLATFORM_MARGIN_FACTOR: 0.15,
   TEXT_PLATFORM_WIDTH_FACTOR: 0.88, // Increased by 10% from 0.8 for better text fitting
   TEXT_PLATFORM_DEPTH_FACTOR: 0.165, // Increased by 10% from 0.15 for better text fitting
   TEXT_EMBOSS_DEPTH: 1.0,
