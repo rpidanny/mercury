@@ -18,7 +18,6 @@ type AppState = {
     textPlatformHeightOverride?: number;
     selectedFontKey: string;
     fontBold: boolean;
-    fontItalic: boolean;
   };
   ui: {
     status: string;
