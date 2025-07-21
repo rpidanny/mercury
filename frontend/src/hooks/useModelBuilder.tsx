@@ -8,8 +8,12 @@ import { STLExporter } from '../lib/STLExporter';
 export const useModelBuilder = () => {
   const { state, setLoading } = useAppContext();
   const { resources, modelConfig } = state;
-  const { terrainData, font } = resources;
-  const { widthMM, altMult, shape, embossText, rotationAngle, lowPolyMode, textPlatformHeightOverride } = modelConfig;
+  const { terrainData, font, fonts } = resources;
+  const { widthMM, altMult, shape, embossText, rotationAngle, lowPolyMode, textPlatformHeightOverride, selectedFontKey, fontBold } = modelConfig;
+  
+  // Get the currently selected font variant, fallback to default font if not loaded yet
+  const fontVariantKey = `${selectedFontKey}_${fontBold ? 'bold' : 'regular'}`;
+  const currentFont = fonts[fontVariantKey] || font;
   
   const [localMesh, setLocalMesh] = useState<Object3D | null>(null);
   const [pendingChanges, setPendingChanges] = useState<boolean>(false);
@@ -62,7 +66,7 @@ export const useModelBuilder = () => {
               altMult,
               shape,
               embossText,
-              font,
+              currentFont,
               rotationAngle,
               lowPolyMode,
               textPlatformHeightOverride
@@ -92,7 +96,7 @@ export const useModelBuilder = () => {
     if (!initialRenderComplete.current || pendingChanges) {
       buildModel();
     }
-  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, font, rotationAngle, lowPolyMode, textPlatformHeightOverride, setLoading, isRendererInitialized, localMesh]);
+  }, [terrainData, pendingChanges, widthMM, altMult, shape, embossText, currentFont, selectedFontKey, fontBold, rotationAngle, lowPolyMode, textPlatformHeightOverride, setLoading, isRendererInitialized, localMesh]);
   
   // Update renderer when mesh changes after initial render
   useEffect(() => {

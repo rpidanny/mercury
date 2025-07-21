@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ShapeType } from '../../lib/types';
 import { useAppContext } from '../../context/AppContext';
 import { useModelBuilder } from '../../hooks/useModelBuilder';
+import { FONTS } from '../../lib/fonts';
 import { 
   WidthIcon, 
   ShapeIcon, 
@@ -13,7 +14,8 @@ import {
   SquareIcon,
   CircleIcon,
   LowPolyIcon,
-  TextHeightIcon
+  TextHeightIcon,
+  FontIcon
 } from '../../components/Icons';
 import ToolbarControl from '../../components/ToolbarControl';
 import './PreviewPage.css';
@@ -29,7 +31,7 @@ export default function PreviewPage() {
   const { state, updateModelConfig, resetTerrain, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
   const { loading } = ui;
-  const { shape, widthMM, altMult, rotationAngle, lowPolyMode, embossText, textPlatformHeightOverride } = modelConfig;
+  const { shape, widthMM, altMult, rotationAngle, lowPolyMode, embossText, textPlatformHeightOverride, selectedFontKey, fontBold, fontItalic } = modelConfig;
   
   // Local UI state
   const [activeControl, setActiveControl] = useState<string | null>(null);
@@ -147,6 +149,27 @@ export default function PreviewPage() {
     setLowPolyMode(enabled);
     updateModel();
   }, [setLowPolyMode, updateModel]);
+
+  // Handle font selection changes
+  const handleFontChange = useCallback((fontKey: string) => {
+    updateModelConfig({ selectedFontKey: fontKey });
+    updateModel();
+  }, [updateModelConfig, updateModel]);
+
+  const isFontActive = useCallback((fontKey: string) => 
+    selectedFontKey === fontKey ? 'active' : '', 
+  [selectedFontKey]);
+
+  // Handle font style changes
+  const handleFontBoldChange = useCallback((bold: boolean) => {
+    updateModelConfig({ fontBold: bold });
+    updateModel();
+  }, [updateModelConfig, updateModel]);
+
+  const handleFontItalicChange = useCallback((italic: boolean) => {
+    updateModelConfig({ fontItalic: italic });
+    updateModel();
+  }, [updateModelConfig, updateModel]);
 
   // Handle text platform height changes
   const handleTextHeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -576,6 +599,81 @@ export default function PreviewPage() {
               </div>
             </ToolbarControl>
             <span className="tooltip">Override text platform height</span>
+          </div>
+        )}
+
+        {/* Font Selection control */}
+        {embossText && (
+          <div className="toolbar-control-wrapper">
+            <ToolbarControl
+              name="font"
+              activeControl={activeControl}
+              toggleControl={toggleControl}
+              title="Choose text font style"
+              disabled={loading}
+              icon={<FontIcon />}
+            >
+              <div className="font-control-container">
+                <label className="font-label">Text Font</label>
+                
+                {/* Font Style Toggles */}
+                <div className="font-style-toggles">
+                  <button
+                    className={`font-style-button ${fontBold ? 'active' : ''}`}
+                    onClick={() => handleFontBoldChange(!fontBold)}
+                    disabled={loading}
+                    title="Toggle Bold"
+                  >
+                    <strong>B</strong>
+                  </button>
+                  <button
+                    className={`font-style-button ${fontItalic ? 'active' : ''}`}
+                    onClick={() => handleFontItalicChange(!fontItalic)}
+                    disabled={loading}
+                    title="Toggle Italic"
+                  >
+                    <em>I</em>
+                  </button>
+                </div>
+                
+                <div className="font-grid">
+                  {Object.entries(FONTS).map(([fontKey, fontInfo]) => (
+                    <button
+                      key={fontKey}
+                      className={`font-button ${isFontActive(fontKey)}`}
+                      onClick={() => handleFontChange(fontKey)}
+                      disabled={loading}
+                      title={`Select ${fontInfo.name}`}
+                    >
+                      <div 
+                        className="font-preview"
+                        style={{
+                          fontFamily: fontInfo.cssFont,
+                          fontWeight: fontBold ? '700' : '400',
+                          fontStyle: fontItalic ? 'italic' : 'normal',
+                        }}
+                      >
+                        {fontInfo.previewText}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="font-current">
+                  Using: <span 
+                    className="font-current-preview"
+                    style={{
+                      fontFamily: FONTS[selectedFontKey as keyof typeof FONTS]?.cssFont || 'Arial, sans-serif',
+                      fontWeight: fontBold ? '700' : '400',
+                      fontStyle: fontItalic ? 'italic' : 'normal',
+                    }}
+                  >
+                    {FONTS[selectedFontKey as keyof typeof FONTS]?.name || 'Default'}
+                    {fontBold && ' Bold'}{fontItalic && ' Italic'}
+                  </span>
+                </div>
+              </div>
+            </ToolbarControl>
+            <span className="tooltip">Choose text font style</span>
           </div>
         )}
       </div>

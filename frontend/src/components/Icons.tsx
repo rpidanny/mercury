@@ -80,4 +80,15 @@ export const TextHeightIcon: React.FC = () => (
     <path d="M10 10h4"/>
     <path d="M10 14h4"/>
   </svg>
+);
+
+export const FontIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 7L5 21H7L8 18H12L13 21H15L11 7H9Z"/>
+    <path d="M8.5 16L10 12L11.5 16H8.5Z" fill="currentColor"/>
+    <path d="M15 7V21"/>
+    <path d="M15 7H21"/>
+    <path d="M15 14H19"/>
+    <path d="M15 21H21"/>
+  </svg>
 ); 

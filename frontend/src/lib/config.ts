@@ -1,10 +1,10 @@
 import * as THREE from "three";
+import { DEFAULT_FONT_URL } from "./fonts";
 
 const Config = {
   API_URL: "http://localhost:8848/api/v1/lookup",
   GRID_URL: "http://localhost:8848/api/v1/grid",
-  FONT_URL:
-    "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/fonts/helvetiker_regular.typeface.json",
+  FONT_URL: DEFAULT_FONT_URL,
   TERRAIN_GRID_RESOLUTION: 2000,
   HEX_PADDING_FACTOR_DEFAULT: 4.0,
   HEX_PADDING_INCREMENT: 0.05,

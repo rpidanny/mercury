@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, ReactNode, Dispatch, useCallback
 import { ShapeType } from '../lib/types';
 import { Font } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TerrainData } from '../lib/TerrainGenerator';
+import { DEFAULT_FONT_KEY } from '../lib/fonts';
 
 type AppState = {
   file: File | null;
@@ -15,6 +16,9 @@ type AppState = {
     rotationAngle: number;
     lowPolyMode: boolean;
     textPlatformHeightOverride?: number;
+    selectedFontKey: string;
+    fontBold: boolean;
+    fontItalic: boolean;
   };
   ui: {
     status: string;
@@ -22,6 +26,7 @@ type AppState = {
   };
   resources: {
     font: Font | null;
+    fonts: Record<string, Font>;
     terrainData: TerrainData | null;
   };
 };
@@ -33,6 +38,7 @@ type AppAction =
   | { type: 'SET_LOADING', payload: boolean }
   | { type: 'SET_LOADING_WITH_STATUS', payload: { loading: boolean, status: string } }
   | { type: 'SET_FONT', payload: Font | null }
+  | { type: 'SET_FONTS', payload: { key: string, font: Font } }
   | { type: 'SET_TERRAIN_DATA', payload: TerrainData | null }
   | { type: 'RESET_TERRAIN' };
 
@@ -47,7 +53,10 @@ const initialState: AppState = {
     paddingFactor: 4.0,
     embossText: '',
     rotationAngle: 0,
-    lowPolyMode: false
+    lowPolyMode: false,
+    selectedFontKey: DEFAULT_FONT_KEY,
+    fontBold: true,
+    fontItalic: false
   },
   ui: {
     status: '',
@@ -55,6 +64,7 @@ const initialState: AppState = {
   },
   resources: {
     font: null,
+    fonts: {},
     terrainData: null
   }
 };
@@ -98,6 +108,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { 
         ...state, 
         resources: { ...state.resources, font: action.payload } 
+      };
+    
+    case 'SET_FONTS': 
+      return { 
+        ...state, 
+        resources: { 
+          ...state.resources, 
+          fonts: { ...state.resources.fonts, [action.payload.key]: action.payload.font } 
+        } 
       };
     
     case 'SET_TERRAIN_DATA': 
