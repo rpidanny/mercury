@@ -1,10 +1,10 @@
 import * as THREE from "three";
+import { DEFAULT_FONT_URL } from "./fonts";
 
 const Config = {
   API_URL: "http://localhost:8848/api/v1/lookup",
   GRID_URL: "http://localhost:8848/api/v1/grid",
-  FONT_URL:
-    "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/fonts/helvetiker_regular.typeface.json",
+  FONT_URL: DEFAULT_FONT_URL,
   TERRAIN_GRID_RESOLUTION: 2000,
   HEX_PADDING_FACTOR_DEFAULT: 4.0,
   HEX_PADDING_INCREMENT: 0.05,
@@ -15,11 +15,11 @@ const Config = {
   BASE_OVERLAP_FACTOR: 1.005,
   BOUNDARY_THRESHOLD_MM: 1.0,
   TEXT_PLATFORM_HEIGHT_OFFSET: 1.0,
-  TEXT_PLATFORM_MARGIN_FACTOR: 0.2,
-  TEXT_PLATFORM_WIDTH_FACTOR: 0.8,
-  TEXT_PLATFORM_DEPTH_FACTOR: 0.15,
+  TEXT_PLATFORM_MARGIN_FACTOR: 0.15,
+  TEXT_PLATFORM_WIDTH_FACTOR: 0.88, // Increased by 10% from 0.8 for better text fitting
+  TEXT_PLATFORM_DEPTH_FACTOR: 0.165, // Increased by 10% from 0.15 for better text fitting
   TEXT_EMBOSS_DEPTH: 1.0,
-  TEXT_SIZE_FACTOR: 0.08,
+  TEXT_SIZE_FACTOR: 0.15, // Increased from 0.08 to 0.15 for better 3D printability
   TEXT_PADDING_FACTOR: 0.9,
   TEXT_PATH_BUFFER: 5.0,
   WORLD_Z_UP: new THREE.Vector3(0, 0, 1),
