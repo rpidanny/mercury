@@ -31,7 +31,7 @@ export default function PreviewPage() {
   const { state, updateModelConfig, resetTerrain, setLowPolyMode } = useAppContext();
   const { ui, modelConfig } = state;
   const { loading } = ui;
-  const { shape, widthMM, altMult, rotationAngle, lowPolyMode, embossText, textPlatformHeightOverride, selectedFontKey, fontBold, fontItalic } = modelConfig;
+  const { shape, widthMM, altMult, rotationAngle, lowPolyMode, embossText, textPlatformHeightOverride, selectedFontKey, fontBold } = modelConfig;
   
   // Local UI state
   const [activeControl, setActiveControl] = useState<string | null>(null);
@@ -163,11 +163,6 @@ export default function PreviewPage() {
   // Handle font style changes
   const handleFontBoldChange = useCallback((bold: boolean) => {
     updateModelConfig({ fontBold: bold });
-    updateModel();
-  }, [updateModelConfig, updateModel]);
-
-  const handleFontItalicChange = useCallback((italic: boolean) => {
-    updateModelConfig({ fontItalic: italic });
     updateModel();
   }, [updateModelConfig, updateModel]);
 
@@ -626,14 +621,6 @@ export default function PreviewPage() {
                   >
                     <strong>B</strong>
                   </button>
-                  <button
-                    className={`font-style-button ${fontItalic ? 'active' : ''}`}
-                    onClick={() => handleFontItalicChange(!fontItalic)}
-                    disabled={loading}
-                    title="Toggle Italic"
-                  >
-                    <em>I</em>
-                  </button>
                 </div>
                 
                 <div className="font-grid">
@@ -650,7 +637,6 @@ export default function PreviewPage() {
                         style={{
                           fontFamily: fontInfo.cssFont,
                           fontWeight: fontBold ? '700' : '400',
-                          fontStyle: fontItalic ? 'italic' : 'normal',
                         }}
                       >
                         {fontInfo.previewText}
@@ -664,11 +650,10 @@ export default function PreviewPage() {
                     style={{
                       fontFamily: FONTS[selectedFontKey as keyof typeof FONTS]?.cssFont || 'Arial, sans-serif',
                       fontWeight: fontBold ? '700' : '400',
-                      fontStyle: fontItalic ? 'italic' : 'normal',
                     }}
                   >
                     {FONTS[selectedFontKey as keyof typeof FONTS]?.name || 'Default'}
-                    {fontBold && ' Bold'}{fontItalic && ' Italic'}
+                    {fontBold && ' Bold'}
                   </span>
                 </div>
               </div>

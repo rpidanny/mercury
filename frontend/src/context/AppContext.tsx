@@ -54,8 +54,7 @@ const initialState: AppState = {
     rotationAngle: 0,
     lowPolyMode: false,
     selectedFontKey: DEFAULT_FONT_KEY,
-    fontBold: true,
-    fontItalic: false
+    fontBold: true
   },
   ui: {
     status: '',
